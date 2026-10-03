@@ -415,6 +415,10 @@ const ContentDetail = () => {
         )}
       </div>
       
+      {/* File Preview and Download Section */}
+      <div className="mb-8">
+        {renderFilePreview()}
+      </div>
 
       {/* Generated Posts Section */}
       {content.generated_posts && content.generated_posts.length > 0 && (
