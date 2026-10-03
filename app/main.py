@@ -19,10 +19,14 @@ app = FastAPI(title="NCPOR Polar Science Outreach Portal")
 from fastapi import Depends
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models import ScientificDataset, Publication, ExpeditionReport, MediaItem
+from app.models import ScientificDataset, Publication, ExpeditionReport, MediaItem, PublishLog, GeneratedContent
 
 @app.delete("/api/wipe-stale")
 def wipe_stale_data(db: Session = Depends(get_db)):
+    # Clear logs and generated content to avoid foreign key constraints during wipe
+    db.query(PublishLog).delete()
+    db.query(GeneratedContent).delete()
+    
     deleted = 0
     for model in [ExpeditionReport, ScientificDataset, Publication, MediaItem]:
         items = db.query(model).all()
@@ -31,7 +35,7 @@ def wipe_stale_data(db: Session = Depends(get_db)):
                 db.delete(item)
                 deleted += 1
     db.commit()
-    return {"message": f"Deleted {deleted} stale records"}
+    return {"message": f"Deleted {deleted} stale records and cleared logs"}
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request, exc):
