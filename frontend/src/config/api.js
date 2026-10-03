@@ -16,22 +16,26 @@ export const API_CONFIG = {
     // Reports (PDF) — mounted under /api/expeditions prefix
     uploadReport:      (expeditionId) => `/api/expeditions/${expeditionId}/reports`,
     reportById:        (id) => `/api/files/reports/${id}`,
+    deleteReport:      (id) => `/api/expeditions/${id}`,
 
     // Datasets
     datasets:          '/api/datasets',
     datasetById:       (id) => `/api/datasets/${id}`,
     datasetPreview:    (id) => `/api/datasets/${id}/preview`,
     datasetFile:       (id) => `/api/files/datasets/${id}`,
+    deleteDataset:     (id) => `/api/datasets/${id}`,
 
     // Publications
     publications:      '/api/publications',
     publicationById:   (id) => `/api/publications/${id}`,
     publicationFile:   (id) => `/api/files/publications/${id}`,
+    deletePublication: (id) => `/api/publications/${id}`,
 
     // Media (photos/videos) — mounted under /api/expeditions prefix
     uploadMedia:       (expeditionId) => `/api/expeditions/${expeditionId}/media`,
     mediaFile:         (id) => `/api/files/media/${id}`,
     mediaThumbnail:    (id) => `/api/files/media/${id}/thumbnail`,
+    deleteMedia:       (id) => `/api/expeditions/${id}/media`,
 
     // Institutional Activities
     activities:        '/api/activities',

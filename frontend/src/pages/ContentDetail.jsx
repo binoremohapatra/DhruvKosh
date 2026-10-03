@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Film, FileText, Play } from 'lucide-react';
+import { Film, FileText, Play, Trash2 } from 'lucide-react';
 import { contentAPI } from '../utils/api';
 import PublishPanel from '../components/PublishPanel';
 import DatasetViewer from '../polar-viz/components/DatasetViewer';
@@ -65,8 +65,19 @@ const ContentDetail = () => {
       setGenerating(false);
     }
   };
-
   
+  const handleDelete = async () => {
+    if (window.confirm('Are you sure you want to delete this item? This action cannot be undone.')) {
+      try {
+        await contentAPI.delete(id);
+        navigate('/repository');
+      } catch (err) {
+        console.error('Delete failed:', err);
+        alert('Failed to delete item. You may not have permission.');
+      }
+    }
+  };
+
   const handlePostEdit = (postId, newText) => {
     setEditingPosts(prev => ({
       ...prev,
@@ -406,26 +417,35 @@ const ContentDetail = () => {
               )}
             </div>
           </div>
-          <button
-            onClick={handleGenerate}
-            disabled={generating}
-            className="shrink-0 px-8 py-3 bg-ncpor-accent text-ncpor-bg font-semibold uppercase tracking-wider text-sm rounded-lg hover:bg-ncpor-accentBright disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center space-x-2"
-          >
-            {generating ? (
-              <>
-                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-ncpor-bg" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <span>Generating...</span>
-              </>
-            ) : (
-              <>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                <span>Generate Content</span>
-              </>
-            )}
-          </button>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
+            <button
+              onClick={handleDelete}
+              className="px-4 py-3 bg-rose-500/10 border border-rose-500/30 text-rose-400 font-semibold uppercase tracking-wider text-sm rounded-lg hover:bg-rose-500 hover:text-white transition-all flex items-center justify-center space-x-2"
+              title="Delete this item"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+            <button
+              onClick={handleGenerate}
+              disabled={generating}
+              className="px-8 py-3 bg-ncpor-accent text-ncpor-bg font-semibold uppercase tracking-wider text-sm rounded-lg hover:bg-ncpor-accentBright disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center space-x-2"
+            >
+              {generating ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-ncpor-bg" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span>Generating...</span>
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                  <span>Generate Content</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
 
         {/* Inline error banner (for generate errors, not initial load errors) */}
