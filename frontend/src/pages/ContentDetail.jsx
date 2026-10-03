@@ -147,10 +147,21 @@ const ContentDetail = () => {
             ) : (
               <iframe
                 src={fileUrl}
-                className="w-full h-96 border border-ncpor-divider rounded-lg"
+                className="w-full h-96 border border-ncpor-divider rounded-lg mb-4"
                 title="PDF Preview"
               />
             )}
+            
+            <div className="flex justify-end mt-4">
+              <a
+                href={fileUrl}
+                download
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-ncpor-accent/40 text-ncpor-accent text-sm font-semibold hover:bg-ncpor-accent hover:text-ncpor-bg transition-all"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                Download Document
+              </a>
+            </div>
           </div>
         );
       }
@@ -161,9 +172,19 @@ const ContentDetail = () => {
             <BandwidthAwareImage
               src={fileUrl}
               alt={content.title}
-              className="w-full h-auto rounded-lg shadow-md"
+              className="w-full h-auto rounded-lg shadow-md mb-4"
               placeholderLabel="High-resolution Image"
             />
+            <div className="flex justify-end mt-4">
+              <a
+                href={fileUrl}
+                download
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-ncpor-accent/40 text-ncpor-accent text-sm font-semibold hover:bg-ncpor-accent hover:text-ncpor-bg transition-all"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                Download Photo
+              </a>
+            </div>
           </div>
         );
       case 'video': {
@@ -193,11 +214,22 @@ const ContentDetail = () => {
               <video
                 src={fileUrl}
                 controls
-                className="w-full rounded-lg shadow-md"
+                className="w-full rounded-lg shadow-md mb-4"
               >
                 Your browser does not support the video tag.
               </video>
             )}
+            
+            <div className="flex justify-end mt-4">
+              <a
+                href={fileUrl}
+                download
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-ncpor-accent/40 text-ncpor-accent text-sm font-semibold hover:bg-ncpor-accent hover:text-ncpor-bg transition-all"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                Download Video
+              </a>
+            </div>
           </div>
         );
       }
