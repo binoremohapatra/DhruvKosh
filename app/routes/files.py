@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from sqlalchemy.orm import Session
 import os
 from app.database import get_db
@@ -32,6 +32,9 @@ def get_report_file(report_id: int, db: Session = Depends(get_db)):
     if not report:
         raise HTTPException(status_code=404, detail="Report not found")
     
+    if report.file_path.startswith("http"):
+        return RedirectResponse(report.file_path)
+        
     if not os.path.exists(report.file_path):
         raise HTTPException(status_code=404, detail="File not found on disk")
     
@@ -47,6 +50,9 @@ def get_dataset_file(dataset_id: int, db: Session = Depends(get_db)):
     if not dataset:
         raise HTTPException(status_code=404, detail="Dataset not found")
     
+    if dataset.file_path and dataset.file_path.startswith("http"):
+        return RedirectResponse(dataset.file_path)
+        
     if not os.path.exists(dataset.file_path):
         raise HTTPException(status_code=404, detail="File not found on disk")
     
@@ -62,6 +68,9 @@ def get_publication_file(publication_id: int, db: Session = Depends(get_db)):
     if not publication or not publication.file_path:
         raise HTTPException(status_code=404, detail="Publication file not found")
     
+    if publication.file_path.startswith("http"):
+        return RedirectResponse(publication.file_path)
+        
     if not os.path.exists(publication.file_path):
         raise HTTPException(status_code=404, detail="File not found on disk")
     
@@ -77,6 +86,9 @@ def get_media_file(media_id: int, db: Session = Depends(get_db)):
     if not media:
         raise HTTPException(status_code=404, detail="Media item not found")
     
+    if media.file_path and media.file_path.startswith("http"):
+        return RedirectResponse(media.file_path)
+        
     if not os.path.exists(media.file_path):
         raise HTTPException(status_code=404, detail="File not found on disk")
     
@@ -92,6 +104,9 @@ def get_media_thumbnail(media_id: int, db: Session = Depends(get_db)):
     if not media or not media.thumbnail_path:
         raise HTTPException(status_code=404, detail="Thumbnail not found")
     
+    if media.thumbnail_path.startswith("http"):
+        return RedirectResponse(media.thumbnail_path)
+        
     if not os.path.exists(media.thumbnail_path):
         raise HTTPException(status_code=404, detail="Thumbnail file not found on disk")
     
