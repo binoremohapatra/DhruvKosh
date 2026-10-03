@@ -1,3 +1,4 @@
+from app.utils.storage import upload_to_cloud_if_configured
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from typing import Optional
@@ -48,6 +49,7 @@ async def upload_media(
             buffer.write(content)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to save file: {str(e)}")
+    file_path = upload_to_cloud_if_configured(file_path, "uploads", unique_filename)
     
     thumbnail_path = None
     if media_type == "photo":
