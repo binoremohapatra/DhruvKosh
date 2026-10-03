@@ -115,10 +115,18 @@ export class VoiceService {
     const controller = (window as any).motionController;
     if (controller && typeof controller.setSpeaking === 'function') {
       controller.setSpeaking(speaking);
+      if (!speaking) {
+        controller.play('IDLE');
+        controller.applyEmotion('NEUTRAL');
+      }
     }
     try {
       const store = useAppStore.getState();
       if (store.setMascotSpeaking) store.setMascotSpeaking(speaking);
+      if (!speaking && store.setMascotEmotion) {
+        store.setMascotEmotion('NEUTRAL' as any);
+        if (store.setMascotAction) store.setMascotAction('IDLE' as any);
+      }
     } catch (error) {}
   }
 }

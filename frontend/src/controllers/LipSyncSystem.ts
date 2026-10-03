@@ -1,3 +1,5 @@
+import { useAppStore } from '../store';
+
 export interface MouthValues {
   vowelA: number; // aa (Jaw drop / Mu khulna)
   vowelE: number; // e (Mid open)
@@ -55,7 +57,13 @@ export class LipSyncSystem {
         this.isPlaying = false; 
         if ((window as any).motionController) {
           (window as any).motionController.play('IDLE');
+          (window as any).motionController.applyEmotion('NEUTRAL');
         }
+        try {
+          const store = useAppStore.getState();
+          if (store.setMascotEmotion) store.setMascotEmotion('NEUTRAL' as any);
+          if (store.setMascotAction) store.setMascotAction('IDLE' as any);
+        } catch (e) {}
       };
     } catch (error) {
       console.error(" Audio Decode Error:", error);
