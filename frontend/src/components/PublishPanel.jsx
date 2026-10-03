@@ -177,10 +177,10 @@ const PublishPanel = ({ post, onPublishSuccess }) => {
         </div>
       )}
 
-      {selectedPlatforms.includes('instagram') && !post.suggested_media_id && (
+      {!post.suggested_media_id && (
         <div className="mb-6 p-4 border border-ncpor-divider rounded-lg bg-ncpor-bg/30">
           <label className="block text-sm font-semibold text-ncpor-primary mb-2">
-            Instagram requires an Image. Please upload one:
+            Attach an Image (Optional, required for Instagram):
           </label>
           <input
             type="file"
@@ -188,7 +188,7 @@ const PublishPanel = ({ post, onPublishSuccess }) => {
             onChange={e => setCustomImage(e.target.files[0])}
             className="text-sm text-ncpor-secondary file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-ncpor-accent/10 file:text-ncpor-accent hover:file:bg-ncpor-accent/20"
           />
-          {!customImage && (
+          {!customImage && selectedPlatforms.includes('instagram') && (
             <p className="text-xs text-red-400 mt-2">Publishing to Instagram will fail without an image.</p>
           )}
         </div>
