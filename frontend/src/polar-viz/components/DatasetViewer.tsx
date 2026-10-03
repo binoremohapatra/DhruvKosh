@@ -101,7 +101,7 @@ export default function DatasetViewer({ file, url, height = 520, onClose }: Prop
 
   const dataset = state.status === 'ready' ? state.dataset : undefined;
   const caps = useMemo(() => (dataset ? evaluateCapabilities(dataset) : undefined), [dataset]);
-  const scalars = dataset?.variables.filter(v => v.role === 'scalar' && v.values) ?? [];
+  const scalars = dataset?.variables.filter(v => v.values && v.values.length > 0) ?? [];
 
   // Set default mode and scalar variable — always prefer 3D if available
   useEffect(() => {
@@ -111,7 +111,7 @@ export default function DatasetViewer({ file, url, height = 520, onClose }: Prop
     console.log('[PolarViz] Variables:', roles);
     console.log('[PolarViz] volume3D:', caps.modes.volume3D);
     console.log('[PolarViz] density:', caps.density);
-    const defaultMode = ORDER.find(m => caps.modes[m]?.enabled && BUILT.includes(m)) ?? 'rawTable';
+    const defaultMode = caps.modes.volume3D?.enabled ? 'volume3D' : (ORDER.find(m => caps.modes[m]?.enabled && BUILT.includes(m)) ?? 'rawTable');
     setMode(defaultMode);
     setVariable(scalars[0]?.name ?? '');
   }, [caps, dataset]);
