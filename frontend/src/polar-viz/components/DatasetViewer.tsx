@@ -80,7 +80,19 @@ export default function DatasetViewer({ file, url, height = 520, onClose }: Prop
           const res = await fetch(url);
           if (!res.ok) throw new Error(`Could not fetch dataset file (HTTP ${res.status}).`);
           const blob = await res.blob();
-          const fileName = decodeURIComponent(url.split('?')[0].split('/').pop() || 'polar_dataset.csv');
+          
+          let fileName = 'polar_dataset.csv'; // Safe default
+          const cd = res.headers.get('content-disposition');
+          if (cd && cd.includes('filename=')) {
+            const match = cd.match(/filename="?([^"]+)"?/);
+            if (match) fileName = match[1];
+          } else {
+            fileName = decodeURIComponent(res.url.split('?')[0].split('/').pop() || 'polar_dataset.csv');
+          }
+          
+          // If after all that, there's no extension, force .csv so the parser doesn't crash on IDs
+          if (!fileName.includes('.')) fileName += '.csv';
+          
           f = new File([blob], fileName);
         }
         if (!cancelled && f) {
