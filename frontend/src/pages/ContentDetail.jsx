@@ -116,6 +116,21 @@ const ContentDetail = () => {
   const renderFilePreview = () => {
     if (!content) return null;
     
+    // Check if the physical file actually exists
+    if (!content.file_path) {
+      return (
+        <div className="bg-ncpor-panel border border-ncpor-divider rounded-xl shadow-premium p-12 text-center group">
+          <div className="text-ncpor-muted/30 text-6xl mb-6">⚠️</div>
+          <h3 className="text-2xl font-display text-ncpor-primary mb-3">
+            File Not Attached
+          </h3>
+          <p className="text-ncpor-secondary max-w-md mx-auto">
+            This entry was created without an actual file attachment. Please upload a new entry with a valid file to view and download it.
+          </p>
+        </div>
+      );
+    }
+
     // download_url is set by the API adapter per content type
     const fileUrl = content.download_url || `${import.meta.env.VITE_API_URL || 'https://dhruvkosh.onrender.com'}/api/files/${content._type}s/${content._raw_id}`;
     const datasetUrl = content.content_type === 'dataset' ? fileUrl : null;
