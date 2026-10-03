@@ -11,8 +11,8 @@ const R = 1.0;
 const INDIAN_ACTIVE_IDS = new Set(['maitri', 'bharati', 'himadri']);
 
 function latLonToVector3(lat, lon, radius = R) {
-  const phi = (90 - lat) * (Math.PI / 180);
-  const theta = (lon + 90) * (Math.PI / 180);
+  const phi   = (90 - lat) * (Math.PI / 180);   // colatitude
+  const theta = lon         * (Math.PI / 180);   // standard east-positive longitude
   return new THREE.Vector3(
     radius * Math.sin(phi) * Math.cos(theta),
     radius * Math.cos(phi),
@@ -358,23 +358,72 @@ const StationMarker = ({ pos, station, isHovered, isDimmed, onHover, onLeave, on
 
 const ViewController = ({ polarView }) => {
   const { camera, controls } = useThree();
-  const targetPolar = polarView === 'antarctic' 
-    ? Math.PI * 0.82 
-    : polarView === 'arctic' 
-      ? Math.PI * 0.18 
-      : polarView === 'himalayas'
-        ? Math.PI * 0.42
-        : Math.PI * 0.55;
-  
+  const azimuthLockedRef = useRef(false);
+  const lastViewRef = useRef(null);
+
+  // phi = polar elevation angle (0 = north pole, PI = south pole)
+  const targetPolar = polarView === 'antarctic'
+    ? Math.PI * 0.82          // show South Pole region prominently
+    : polarView === 'arctic'
+      ? Math.PI * 0.18        // show North Pole region prominently
+      : Math.PI * 0.42;       // Himalayas — mid-northern tilt
+
+  // ── Azimuth (Three.js Spherical theta) ─────────────────────────────────
+  //
+  // Our latLonToVector3: x = sin(phi)*cos(lon), z = sin(phi)*sin(lon)
+  // Three.js Spherical.setFromVector3: theta = atan2(x, z) = atan2(cos(lon), sin(lon))
+  //                                          = (90° - lon) × π/180
+  //
+  // So to face a real longitude L°E, set Three.js theta = (90 - L) × π/180
+  //
+  // Indian stations:
+  //   Antarctica — midpoint Maitri(11.7°E) + Bharati(76.2°E) = 44°E
+  //                → theta = (90-44) × π/180 = 46° = 0.803 rad
+  //   Arctic     — Himadri, Ny-Ålesund lon 11.9°E
+  //                → theta = (90-11.9) × π/180 = 78.1° = 1.363 rad
+  //   Himalayas  — Himansh, Lahaul-Spiti lon 77.6°E
+  //                → theta = (90-77.6) × π/180 = 12.4° = 0.216 rad
+  const TARGET_AZ = {
+    antarctic: 0.803,   // faces lon 44°E  (Maitri+Bharati midpoint)
+    arctic:    1.363,   // faces lon 11.9°E (Himadri, Svalbard)
+    himalayas: 0.216,   // faces lon 77.6°E (Himansh, Lahaul-Spiti)
+  };
+  const targetAzimuth = TARGET_AZ[polarView] ?? TARGET_AZ.antarctic;
+
   useFrame((state, delta) => {
-    if (controls) {
-      const sph = new THREE.Spherical().setFromVector3(camera.position);
-      if (Math.abs(sph.phi - targetPolar) > 0.01) {
-        sph.phi += (targetPolar - sph.phi) * Math.min(delta * 2.0, 1.0);
-        sph.makeSafe();
-        camera.position.setFromSpherical(sph);
-        camera.lookAt(0,0,0);
+    if (!controls) return;
+
+    // When the polar view changes, snap-animate azimuth to face Indian stations
+    const viewChanged = lastViewRef.current !== polarView;
+    if (viewChanged) {
+      lastViewRef.current = polarView;
+      azimuthLockedRef.current = true;  // re-lock on view switch
+    }
+
+    const sph = new THREE.Spherical().setFromVector3(camera.position);
+    let changed = false;
+
+    // Always animate the polar tilt (phi)
+    if (Math.abs(sph.phi - targetPolar) > 0.005) {
+      sph.phi += (targetPolar - sph.phi) * Math.min(delta * 2.0, 1.0);
+      changed = true;
+    }
+
+    // Animate azimuth only until we reach the target (then let auto-rotate take over)
+    if (azimuthLockedRef.current) {
+      const diff = targetAzimuth - sph.theta;
+      if (Math.abs(diff) > 0.02) {
+        sph.theta += diff * Math.min(delta * 1.5, 1.0);
+        changed = true;
+      } else {
+        azimuthLockedRef.current = false; // reached target — unlock so auto-rotate works
       }
+    }
+
+    if (changed) {
+      sph.makeSafe();
+      camera.position.setFromSpherical(sph);
+      camera.lookAt(0, 0, 0);
     }
   });
   return null;
@@ -401,9 +450,16 @@ export default function PolarGlobe3D({ polarView, activeStation, onHoverStation,
   );
 
   return (
-    <Canvas 
-      dpr={[1, 1.5]} 
-      camera={{ position: [0, -3.5, 3.5], fov: 35 }}
+    <Canvas
+      dpr={[1, 1.5]}
+      camera={{
+        // Pre-positioned facing Maitri+Bharati midpoint (lon≈44°E, lat≈-70°S)
+        // In Three.js Spherical: phi=0.84π≈151° (deep-south tilt), theta≈0.803 rad (=46°)
+        // x = r·sin(phi)·sin(theta), y = r·cos(phi), z = r·sin(phi)·cos(theta)
+        // r≈4.58, sin(0.84π)=0.484, cos(0.84π)=-0.875, sin(0.803)=0.720, cos(0.803)=0.694
+        position: [1.60, -4.01, 1.54],
+        fov: 35
+      }}
       style={{ width: '100%', height: '100%', pointerEvents: 'auto' }}
     >
       <ambientLight intensity={1} />

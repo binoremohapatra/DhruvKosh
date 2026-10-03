@@ -13,7 +13,6 @@ import {
   LogIn,
   CheckCircle2,
   Clock,
-  ChevronDown,
   Zap,
   X,
   Menu
@@ -260,7 +259,7 @@ const Layout = () => {
                     </span>
                   </div>
 
-                  <ChevronDown className="w-3.5 h-3.5 text-ncpor-muted" />
+
                 </button>
 
                 {/* Dropdown Menu */}
