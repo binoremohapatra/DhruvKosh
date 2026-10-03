@@ -180,7 +180,7 @@ const ContentDetail = () => {
             
             <div className="flex justify-end mt-4">
               <a
-                href={fileUrl}
+                href={${fileUrl}?download=1}
                 download
                 className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-ncpor-accent/40 text-ncpor-accent text-sm font-semibold hover:bg-ncpor-accent hover:text-ncpor-bg transition-all"
               >
@@ -203,7 +203,7 @@ const ContentDetail = () => {
             />
             <div className="flex justify-end mt-4">
               <a
-                href={fileUrl}
+                href={${fileUrl}?download=1}
                 download
                 className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-ncpor-accent/40 text-ncpor-accent text-sm font-semibold hover:bg-ncpor-accent hover:text-ncpor-bg transition-all"
               >
@@ -248,7 +248,7 @@ const ContentDetail = () => {
             
             <div className="flex justify-end mt-4">
               <a
-                href={fileUrl}
+                href={${fileUrl}?download=1}
                 download
                 className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-ncpor-accent/40 text-ncpor-accent text-sm font-semibold hover:bg-ncpor-accent hover:text-ncpor-bg transition-all"
               >
@@ -284,7 +284,7 @@ const ContentDetail = () => {
                   </div>
                 </div>
                 <a
-                  href={fileUrl}
+                  href={${fileUrl}?download=1}
                   download
                   className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-ncpor-accent/40 text-ncpor-accent text-sm font-semibold hover:bg-ncpor-accent hover:text-ncpor-bg transition-all"
                 >
@@ -309,7 +309,7 @@ const ContentDetail = () => {
             </h3>
             <p className="text-ncpor-secondary mb-8">This file type cannot be previewed directly in the browser.</p>
             <a
-              href={fileUrl}
+              href={${fileUrl}?download=1}
               download
               className="inline-flex items-center space-x-2 bg-ncpor-sidebar border border-ncpor-divider text-ncpor-primary py-3 px-8 rounded-lg hover:border-ncpor-accent hover:text-ncpor-accent transition-all font-semibold uppercase tracking-wider text-sm"
             >
