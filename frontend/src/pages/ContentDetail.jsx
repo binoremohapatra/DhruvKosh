@@ -149,45 +149,25 @@ const ContentDetail = () => {
     switch (content.content_type) {
       case 'report':
       case 'publication': {
-        const isPdfGated = isLowBandwidth && !forcePdf;
         return (
-          <div className="bg-ncpor-panel border border-ncpor-divider rounded-xl shadow-premium p-4 relative overflow-hidden group">
-            {isPdfGated ? (
-              <div className="flex flex-col items-center justify-center p-8 text-center bg-ncpor-bg/60 rounded-lg border border-ncpor-divider/60 space-y-3 h-96">
-                <div className="w-12 h-12 rounded-full bg-ncpor-accent/10 border border-ncpor-accent/30 flex items-center justify-center text-ncpor-accent">
-                  <FileText className="w-6 h-6" />
-                </div>
-                <div>
-                  <h4 className="font-semibold text-ncpor-primary text-sm">PDF Document Preview Paused</h4>
-                  <p className="text-xs text-ncpor-muted max-w-sm mt-1">
-                    Full document preview is paused in Data Saver mode to preserve internet bandwidth.
-                  </p>
-                </div>
-                <button
-                  onClick={() => setForcePdf(true)}
-                  className="px-4 py-2 bg-ncpor-accent/10 hover:bg-ncpor-accent/20 border border-ncpor-accent/40 rounded-lg text-xs font-semibold text-ncpor-accent transition-colors"
-                >
-                  Load PDF Preview
-                </button>
-              </div>
-            ) : (
-              <iframe
-                src={fileUrl}
-                className="w-full h-96 border border-ncpor-divider rounded-lg mb-4"
-                title="PDF Preview"
-              />
-            )}
-            
-            <div className="flex justify-end mt-4">
-              <a
-                href={${fileUrl}?download=1}
-                download
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-ncpor-accent/40 text-ncpor-accent text-sm font-semibold hover:bg-ncpor-accent hover:text-ncpor-bg transition-all"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                Download Document
-              </a>
+          <div className="bg-ncpor-panel border border-ncpor-divider rounded-xl shadow-premium p-8 relative overflow-hidden group flex flex-col items-center justify-center space-y-4">
+            <div className="w-16 h-16 rounded-full bg-ncpor-accent/10 border border-ncpor-accent/30 flex items-center justify-center text-ncpor-accent">
+              <FileText className="w-8 h-8" />
             </div>
+            <div className="text-center">
+              <h4 className="font-semibold text-ncpor-primary text-lg">Document Available</h4>
+              <p className="text-sm text-ncpor-muted max-w-sm mt-1">
+                Click the button below to securely download the full document.
+              </p>
+            </div>
+            <a
+              href={`${fileUrl}?download=1`}
+              download
+              className="mt-4 flex items-center gap-2 px-6 py-3 rounded-xl bg-ncpor-accent/10 border border-ncpor-accent/40 text-ncpor-accent text-sm font-semibold hover:bg-ncpor-accent hover:text-ncpor-bg transition-all shadow-lg"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+              Download Document
+            </a>
           </div>
         );
       }
