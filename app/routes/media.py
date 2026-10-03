@@ -16,6 +16,56 @@ UPLOAD_DIR = "uploads"
 ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp", "image/heic", "image/heif"]
 ALLOWED_VIDEO_TYPES = ["video/mp4", "video/webm", "video/quicktime"]
 
+@router.post("/standalone", response_model=MediaItemResponse)
+async def upload_standalone_media(
+    title: str = Form("Standalone Media"),
+    description: Optional[str] = Form(None),
+    media_type: str = Form("photo"),
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
+    content = await file.read()
+    allowed = ALLOWED_IMAGE_TYPES if media_type == "photo" else ALLOWED_VIDEO_TYPES
+    if not validate_file_type(content, allowed):
+        if file.content_type not in allowed:
+            raise HTTPException(status_code=400, detail=f"Invalid {media_type} type.")
+    
+    media_dir = os.path.join(UPLOAD_DIR, "media", "standalone", media_type)
+    os.makedirs(media_dir, exist_ok=True)
+    
+    file_extension = os.path.splitext(file.filename)[1]
+    unique_filename = f"{uuid.uuid4()}{file_extension}"
+    file_path = os.path.join(media_dir, unique_filename)
+    
+    try:
+        with open(file_path, "wb") as buffer:
+            buffer.write(content)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to save file: {str(e)}")
+    file_path = upload_to_cloud_if_configured(file_path, "uploads", unique_filename)
+    
+    thumbnail_path = None
+    if media_type == "photo":
+        thumb_dir = os.path.join(media_dir, "thumbnails")
+        os.makedirs(thumb_dir, exist_ok=True)
+        thumb_filename = f"thumb_{unique_filename}.jpg"
+        thumbnail_full_path = os.path.join(thumb_dir, thumb_filename)
+        if generate_thumbnail_safe(file_path, thumbnail_full_path):
+            thumbnail_path = upload_to_cloud_if_configured(thumbnail_full_path, "uploads", thumb_filename)
+    
+    db_media = MediaItem(
+        expedition_id=None,
+        title=title,
+        description=description,
+        media_type=media_type,
+        file_path=file_path,
+        thumbnail_path=thumbnail_path
+    )
+    db.add(db_media)
+    db.commit()
+    db.refresh(db_media)
+    return db_media
+
 @router.post("/{expedition_id}/media", response_model=MediaItemResponse)
 async def upload_media(
     expedition_id: int,

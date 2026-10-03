@@ -27,13 +27,16 @@ def get_content_type(file_path: str, content_type: str) -> str:
     return "application/octet-stream"
 
 @router.get("/reports/{report_id}")
-def get_report_file(report_id: int, db: Session = Depends(get_db)):
+def get_report_file(report_id: int, download: bool = False, db: Session = Depends(get_db)):
     report = db.query(ExpeditionReport).filter(ExpeditionReport.id == report_id).first()
     if not report:
         raise HTTPException(status_code=404, detail="Report not found")
     
     if report.file_path.startswith("http"):
-        return RedirectResponse(report.file_path)
+        url = report.file_path
+        if download and "res.cloudinary.com" in url:
+            url = url.replace("/upload/", "/upload/fl_attachment/")
+        return RedirectResponse(url)
         
     if not os.path.exists(report.file_path):
         raise HTTPException(status_code=404, detail="File not found on disk")
@@ -45,13 +48,16 @@ def get_report_file(report_id: int, db: Session = Depends(get_db)):
     )
 
 @router.get("/datasets/{dataset_id}")
-def get_dataset_file(dataset_id: int, db: Session = Depends(get_db)):
+def get_dataset_file(dataset_id: int, download: bool = False, db: Session = Depends(get_db)):
     dataset = db.query(ScientificDataset).filter(ScientificDataset.id == dataset_id).first()
     if not dataset:
         raise HTTPException(status_code=404, detail="Dataset not found")
     
     if dataset.file_path and dataset.file_path.startswith("http"):
-        return RedirectResponse(dataset.file_path)
+        url = dataset.file_path
+        if download and "res.cloudinary.com" in url:
+            url = url.replace("/upload/", "/upload/fl_attachment/")
+        return RedirectResponse(url)
         
     if not os.path.exists(dataset.file_path):
         raise HTTPException(status_code=404, detail="File not found on disk")
@@ -63,13 +69,16 @@ def get_dataset_file(dataset_id: int, db: Session = Depends(get_db)):
     )
 
 @router.get("/publications/{publication_id}")
-def get_publication_file(publication_id: int, db: Session = Depends(get_db)):
+def get_publication_file(publication_id: int, download: bool = False, db: Session = Depends(get_db)):
     publication = db.query(Publication).filter(Publication.id == publication_id).first()
     if not publication or not publication.file_path:
         raise HTTPException(status_code=404, detail="Publication file not found")
     
     if publication.file_path.startswith("http"):
-        return RedirectResponse(publication.file_path)
+        url = publication.file_path
+        if download and "res.cloudinary.com" in url:
+            url = url.replace("/upload/", "/upload/fl_attachment/")
+        return RedirectResponse(url)
         
     if not os.path.exists(publication.file_path):
         raise HTTPException(status_code=404, detail="File not found on disk")
@@ -81,13 +90,16 @@ def get_publication_file(publication_id: int, db: Session = Depends(get_db)):
     )
 
 @router.get("/media/{media_id}")
-def get_media_file(media_id: int, db: Session = Depends(get_db)):
+def get_media_file(media_id: int, download: bool = False, db: Session = Depends(get_db)):
     media = db.query(MediaItem).filter(MediaItem.id == media_id).first()
     if not media:
         raise HTTPException(status_code=404, detail="Media item not found")
     
     if media.file_path and media.file_path.startswith("http"):
-        return RedirectResponse(media.file_path)
+        url = media.file_path
+        if download and "res.cloudinary.com" in url:
+            url = url.replace("/upload/", "/upload/fl_attachment/")
+        return RedirectResponse(url)
         
     if not os.path.exists(media.file_path):
         raise HTTPException(status_code=404, detail="File not found on disk")

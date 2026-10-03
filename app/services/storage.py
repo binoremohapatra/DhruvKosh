@@ -7,6 +7,9 @@ import cloudinary.uploader
 CLOUDINARY_URL = os.environ.get("CLOUDINARY_URL")
 if CLOUDINARY_URL:
     CLOUDINARY_URL = CLOUDINARY_URL.strip()
+    # Auto-correct typo from user's render dashboard
+    if "@hksqadlz" in CLOUDINARY_URL:
+        CLOUDINARY_URL = CLOUDINARY_URL.replace("@hksqadlz", "@hksqadiz")
     os.environ["CLOUDINARY_URL"] = CLOUDINARY_URL
     cloudinary.config(
         secure=True

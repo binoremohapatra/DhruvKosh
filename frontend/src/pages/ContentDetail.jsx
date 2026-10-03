@@ -146,11 +146,12 @@ const ContentDetail = () => {
     // download_url is set by the API adapter per content type
     const fileUrl = content.download_url || `${import.meta.env.VITE_API_URL || 'https://dhruvkosh.onrender.com'}/api/files/${content._type}s/${content._raw_id}`;
     const datasetUrl = content.content_type === 'dataset' ? fileUrl : null;
-    
+    const isPdfGated = isLowBandwidth && !forcePdf;
+    const isVideoGated = isLowBandwidth && !forceVideo;
+
     switch (content.content_type) {
       case 'report':
       case 'publication': {
-        const isPdfGated = isLowBandwidth && !forcePdf;
         return (
           <div className="bg-ncpor-panel border border-ncpor-divider rounded-xl shadow-premium p-4 relative overflow-hidden group">
             {isPdfGated ? (
@@ -181,10 +182,10 @@ const ContentDetail = () => {
             
             <div className="flex justify-end mt-4">
               <ResumableDownloadButton
-                downloadId={content.id}
+                downloadId={`${content._type}-${content._raw_id}`}
                 url={fileUrl}
-                filename={content.file_path ? content.file_path.split('/').pop() : `${content.title}.pdf`}
-                mimeType="application/pdf"
+                filename={content.file_path ? content.file_path.split('/').pop() : `${content._type}-${content._raw_id}`}
+                mimeType={content.content_type === 'report' || content.content_type === 'publication' ? 'application/pdf' : 'application/octet-stream'}
                 label="Download Document"
               />
             </div>
@@ -203,9 +204,9 @@ const ContentDetail = () => {
             />
             <div className="flex justify-end mt-4">
               <ResumableDownloadButton
-                downloadId={content.id}
+                downloadId={`${content._type}-${content._raw_id}`}
                 url={fileUrl}
-                filename={content.file_path ? content.file_path.split('/').pop() : `${content.title}.jpg`}
+                filename={content.file_path ? content.file_path.split('/').pop() : `${content._type}-${content._raw_id}`}
                 mimeType="image/jpeg"
                 label="Download Photo"
               />
@@ -213,7 +214,6 @@ const ContentDetail = () => {
           </div>
         );
       case 'video': {
-        const isVideoGated = isLowBandwidth && !forceVideo;
         return (
           <div className="bg-ncpor-panel border border-ncpor-divider rounded-xl shadow-premium p-4">
             {isVideoGated ? (
@@ -247,9 +247,9 @@ const ContentDetail = () => {
             
             <div className="flex justify-end mt-4">
               <ResumableDownloadButton
-                downloadId={content.id}
+                downloadId={`${content._type}-${content._raw_id}`}
                 url={fileUrl}
-                filename={content.file_path ? content.file_path.split('/').pop() : `${content.title}.mp4`}
+                filename={content.file_path ? content.file_path.split('/').pop() : `${content._type}-${content._raw_id}`}
                 mimeType="video/mp4"
                 label="Download Video"
               />
@@ -282,9 +282,9 @@ const ContentDetail = () => {
                   </div>
                 </div>
                 <ResumableDownloadButton
-                  downloadId={content.id}
+                  downloadId={`${content._type}-${content._raw_id}`}
                   url={fileUrl}
-                  filename={content.file_path ? content.file_path.split('/').pop() : `${content.title}`}
+                  filename={content.file_path ? content.file_path.split('/').pop() : `${content._type}-${content._raw_id}`}
                   mimeType="application/octet-stream"
                   label="Download Dataset"
                 />
@@ -305,14 +305,13 @@ const ContentDetail = () => {
               File Preview Not Available
             </h3>
             <p className="text-ncpor-secondary mb-8">This file type cannot be previewed directly in the browser.</p>
-            <a
-              href={fileUrl}
-              download
-              className="inline-flex items-center space-x-2 bg-ncpor-sidebar border border-ncpor-divider text-ncpor-primary py-3 px-8 rounded-lg hover:border-ncpor-accent hover:text-ncpor-accent transition-all font-semibold uppercase tracking-wider text-sm"
-            >
-              <span>Download File</span>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-            </a>
+            <ResumableDownloadButton
+              downloadId={`${content._type}-${content._raw_id}`}
+              url={`${fileUrl}?download=1`}
+              filename={content.file_path ? content.file_path.split('/').pop() : `${content._type}-${content._raw_id}`}
+              mimeType="application/octet-stream"
+              label="Download File"
+            />
           </div>
         );
     }
