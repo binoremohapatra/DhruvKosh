@@ -14,8 +14,8 @@ with open("test_system.csv", "w") as f:
 files = {'file': ('test_system.csv', open('test_system.csv', 'rb'), 'text/csv')}
 data = {
     'title': 'Automated Test Dataset',
-    'data_type': 'test',
-    'file_format': 'CSV'
+    'data_type': 'geospatial',
+    'file_format': 'csv'
 }
 
 response = requests.post(f"{BASE_URL}/datasets", files=files, data=data)
