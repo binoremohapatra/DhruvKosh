@@ -2,10 +2,13 @@ import React, { useState, useEffect, useRef, useMemo, useCallback, Suspense } fr
 import { Search, ArrowUpRight, Globe, Layers, Mountain } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useLiveStats } from '../hooks/useLiveStats';
+import { useBandwidth } from '../context/BandwidthContext';
 import verifiedFacts from '../data/facts';
 import LiveIndicator from './LiveIndicator';
 
-const PolarGlobe3D = React.lazy(() => import('./PolarGlobe3D'));
+// PolarGlobe3D is only lazy-loaded when NOT in low-bandwidth mode.
+// We declare the variable here; it gets assigned inside the component.
+let _PolarGlobe3D = null;
 
 const SEARCH_PLACEHOLDERS = [
   "Search the polar archive...",
@@ -172,6 +175,7 @@ const HeroLiveStat = ({ value, label, sourceLabel, duration, delay, isLight }) =
 
 export const PolarGlobeHero3D = ({ onSearch, className = '' }) => {
   const { isLight } = useTheme();
+  const { isLowBandwidth } = useBandwidth();
   // Live stats from backend — shared with Dashboard and Repository
   const { data: liveData, isError: statsError, dataUpdatedAt } = useLiveStats();
   const liveDocuments = liveData?.documents ?? null;
@@ -180,6 +184,15 @@ export const PolarGlobeHero3D = ({ onSearch, className = '' }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const [globeReady, setGlobeReady] = useState(false);
+  // Allow user to force-load the 3D globe even on a slow connection
+  const [force3D, setForce3D] = useState(false);
+
+  // Only assign the lazy import once, when actually needed (not on slow connections)
+  if (!isLowBandwidth || force3D) {
+    if (!_PolarGlobe3D) {
+      _PolarGlobe3D = React.lazy(() => import('./PolarGlobe3D'));
+    }
+  }
 
   const heroRef = useRef(null);
   const searchInputRef = useRef(null);
@@ -213,6 +226,39 @@ export const PolarGlobeHero3D = ({ onSearch, className = '' }) => {
     if (onSearch) onSearch(searchQuery.trim());
   };
 
+  // Render the 3D canvas section — or a data-saver placeholder
+  const renderGlobe = () => {
+    if (isLowBandwidth && !force3D) {
+      return (
+        <div className="absolute top-0 bottom-0 right-0 w-full lg:w-[65%] h-full flex items-center justify-center">
+          <div className={`mx-auto max-w-xs rounded-2xl border p-6 text-center ${
+            isLight ? 'bg-white/80 border-slate-200 text-[#0B1B33]' : 'bg-[#0D1422]/90 border-white/10 text-[#EAF0F8]'
+          }`}>
+            <Globe className="w-10 h-10 mx-auto mb-3 opacity-30" />
+            <p className="font-semibold text-sm mb-1">3D Globe unavailable in Data Saver</p>
+            <p className="text-xs opacity-60 mb-4">Your connection is slow. Scientific data is still fully accessible below.</p>
+            <button
+              onClick={() => setForce3D(true)}
+              className={`text-xs px-4 py-1.5 rounded-full border transition-colors ${
+                isLight ? 'border-[#0A7C8C] text-[#0A7C8C] hover:bg-[#0A7C8C]/10' : 'border-[#7FE7F5] text-[#7FE7F5] hover:bg-[#7FE7F5]/10'
+              }`}
+            >
+              Load 3D Globe anyway
+            </button>
+          </div>
+        </div>
+      );
+    }
+    const PolarGlobe3D = _PolarGlobe3D;
+    return (
+      <div className="absolute top-0 bottom-0 right-0 w-full lg:w-[65%] h-full flex items-center justify-center">
+        <Suspense fallback={null}>
+          <PolarGlobe3D polarView={polarView} />
+        </Suspense>
+      </div>
+    );
+  };
+
   return (
     <section
       ref={heroRef}
@@ -240,9 +286,7 @@ export const PolarGlobeHero3D = ({ onSearch, className = '' }) => {
         }`}
       >
         <Suspense fallback={null}>
-          <div className="absolute top-0 bottom-0 right-0 w-full lg:w-[65%] h-full flex items-center justify-center">
-            <PolarGlobe3D polarView={polarView} />
-          </div>
+          {renderGlobe()}
         </Suspense>
 
         {/* Polar Realms: Antarctica, Arctic, Himalayas (Third Pole) */}

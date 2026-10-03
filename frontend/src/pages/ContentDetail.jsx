@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { Film, FileText, Play } from 'lucide-react';
 import { contentAPI } from '../utils/api';
 import PublishPanel from '../components/PublishPanel';
 import DatasetViewer from '../polar-viz/components/DatasetViewer';
+import BandwidthAwareImage from '../components/BandwidthAwareImage';
+import { useBandwidth } from '../context/BandwidthContext';
 
 const ContentDetail = () => {
   const { id } = useParams();
@@ -14,6 +17,9 @@ const ContentDetail = () => {
   const [generating, setGenerating] = useState(false);
   const [activeTab, setActiveTab] = useState('twitter');
   const [editingPosts, setEditingPosts] = useState({});
+  const [forceVideo, setForceVideo] = useState(false);
+  const [forcePdf, setForcePdf] = useState(false);
+  const { isLowBandwidth } = useBandwidth();
   
   useEffect(() => {
     const fetchContent = async () => {
@@ -116,42 +122,85 @@ const ContentDetail = () => {
     
     switch (content.content_type) {
       case 'report':
-      case 'publication':
+      case 'publication': {
+        const isPdfGated = isLowBandwidth && !forcePdf;
         return (
           <div className="bg-ncpor-panel border border-ncpor-divider rounded-xl shadow-premium p-4 relative overflow-hidden group">
-            <iframe
-              src={fileUrl}
-              className="w-full h-96 border border-ncpor-divider rounded-lg"
-              title="PDF Preview"
-            />
+            {isPdfGated ? (
+              <div className="flex flex-col items-center justify-center p-8 text-center bg-ncpor-bg/60 rounded-lg border border-ncpor-divider/60 space-y-3 h-96">
+                <div className="w-12 h-12 rounded-full bg-ncpor-accent/10 border border-ncpor-accent/30 flex items-center justify-center text-ncpor-accent">
+                  <FileText className="w-6 h-6" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-ncpor-primary text-sm">PDF Document Preview Paused</h4>
+                  <p className="text-xs text-ncpor-muted max-w-sm mt-1">
+                    Full document preview is paused in Data Saver mode to preserve internet bandwidth.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setForcePdf(true)}
+                  className="px-4 py-2 bg-ncpor-accent/10 hover:bg-ncpor-accent/20 border border-ncpor-accent/40 rounded-lg text-xs font-semibold text-ncpor-accent transition-colors"
+                >
+                  Load PDF Preview
+                </button>
+              </div>
+            ) : (
+              <iframe
+                src={fileUrl}
+                className="w-full h-96 border border-ncpor-divider rounded-lg"
+                title="PDF Preview"
+              />
+            )}
           </div>
         );
+      }
       case 'photo':
         return (
           <div className="bg-ncpor-panel border border-ncpor-divider rounded-xl shadow-premium p-4 relative group">
             <div className="absolute inset-0 bg-gradient-to-t from-[#0B1416] via-transparent to-transparent opacity-0 group-hover:opacity-50 transition-opacity duration-300 pointer-events-none rounded-xl" />
-            <img
+            <BandwidthAwareImage
               src={fileUrl}
               alt={content.title}
               className="w-full h-auto rounded-lg shadow-md"
-              onError={(e) => {
-                e.target.src = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect fill="#101E22" width="400" height="300"/><text fill="#7C949A" font-family="Arial" font-size="20" x="50%" y="50%" text-anchor="middle">Image not available</text></svg>');
-              }}
+              placeholderLabel="High-resolution Image"
             />
           </div>
         );
-      case 'video':
+      case 'video': {
+        const isVideoGated = isLowBandwidth && !forceVideo;
         return (
           <div className="bg-ncpor-panel border border-ncpor-divider rounded-xl shadow-premium p-4">
-            <video
-              src={fileUrl}
-              controls
-              className="w-full rounded-lg shadow-md"
-            >
-              Your browser does not support the video tag.
-            </video>
+            {isVideoGated ? (
+              <div className="flex flex-col items-center justify-center p-8 text-center bg-ncpor-bg/60 rounded-lg border border-ncpor-divider/60 space-y-3">
+                <div className="w-12 h-12 rounded-full bg-ncpor-accent/10 border border-ncpor-accent/30 flex items-center justify-center text-ncpor-accent">
+                  <Film className="w-6 h-6" />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-ncpor-primary text-sm">Video Streaming Paused</h4>
+                  <p className="text-xs text-ncpor-muted max-w-sm mt-1">
+                    Video playback is blocked in Data Saver mode to preserve bandwidth.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setForceVideo(true)}
+                  className="px-4 py-2 bg-ncpor-accent/10 hover:bg-ncpor-accent/20 border border-ncpor-accent/40 rounded-lg text-xs font-semibold text-ncpor-accent transition-colors flex items-center gap-2"
+                >
+                  <Play className="w-3.5 h-3.5 fill-current" />
+                  Load & Play Video
+                </button>
+              </div>
+            ) : (
+              <video
+                src={fileUrl}
+                controls
+                className="w-full rounded-lg shadow-md"
+              >
+                Your browser does not support the video tag.
+              </video>
+            )}
           </div>
         );
+      }
       case 'dataset':
         return (
           <div className="space-y-4">
@@ -410,14 +459,11 @@ const ContentDetail = () => {
                 {postsByPlatform[activeTab].suggested_media_id && (
                   <div className="mb-4 bg-ncpor-bg/30 p-4 rounded-xl border border-ncpor-divider flex items-center gap-4">
                     <div className="w-16 h-16 rounded overflow-hidden bg-ncpor-panel flex items-center justify-center flex-shrink-0">
-                      <img 
+                      <BandwidthAwareImage 
                         src={`${import.meta.env.VITE_API_URL || 'https://dhruvkosh.onrender.com'}/api/files/media/${postsByPlatform[activeTab].suggested_media_id}/thumbnail`}
                         alt="Suggested Media"
                         className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.src = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect fill="#101E22" width="64" height="64"/><text fill="#7C949A" font-family="Arial" font-size="10" x="50%" y="50%" text-anchor="middle">Media</text></svg>');
-                        }}
+                        placeholderLabel="Media Thumbnail"
                       />
                     </div>
                     <div>

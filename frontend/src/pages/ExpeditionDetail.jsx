@@ -5,6 +5,7 @@ import { FileText, BarChart, Book, Image as ImageIcon, Plus } from 'lucide-react
 import { API_BASE_URL } from '../config';
 import * as expeditionApi from '../api/expeditions';
 import UploadModal from '../components/UploadModal';
+import BandwidthAwareImage from '../components/BandwidthAwareImage';
 
 const ExpeditionDetail = () => {
   const { id } = useParams();
@@ -21,7 +22,6 @@ const ExpeditionDetail = () => {
 
   if (loadingExpedition) return <div className="text-center p-20"><div className="animate-spin h-10 w-10 border-4 border-ncpor-accent border-t-transparent rounded-full mx-auto"></div></div>;
   if (expError || !expedition) return <div className="text-center p-20 text-ncpor-warning bg-ncpor-warning/10 border border-ncpor-warning/20 max-w-lg mx-auto rounded-xl mt-12">Expedition not found or failed to load.</div>;
-
 
   return (
     <div className="font-sans">
@@ -105,7 +105,7 @@ const ExpeditionDetail = () => {
                     <div key={m.id} className="border border-ncpor-border rounded-lg overflow-hidden bg-ncpor-bgSecondary group cursor-pointer hover:border-ncpor-accent/50 transition-colors">
                       <div className="h-32 bg-ncpor-bg flex items-center justify-center relative overflow-hidden">
                          {m.media_type === 'photo' ? (
-                           <img src={`${API_BASE_URL}/api/files/${m.file_path.replace('uploads/', '')}`} className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500" alt={m.title} />
+                           <BandwidthAwareImage src={`${API_BASE_URL}/api/files/${m.file_path.replace('uploads/', '')}`} className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500" alt={m.title} placeholderLabel="Photo" />
                          ) : (
                            <ImageIcon className="h-8 w-8 text-ncpor-textMuted group-hover:text-ncpor-accent/50 transition-colors" />
                          )}
