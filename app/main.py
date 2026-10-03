@@ -93,5 +93,10 @@ def health_check():
         "publish_mode": os.getenv("PUBLISH_MODE", "dry_run")
     }
 
+@app.get("/api/check-env")
+def check_env():
+    import os
+    return {"CLOUDINARY": os.environ.get("CLOUDINARY_URL", "NOT_FOUND")}
+
 if __name__ == "__main__":
     uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
