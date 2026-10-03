@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FileText, FileBarChart, Image as ImageIcon, Film, File } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist';
+import { useBandwidth } from '../context/BandwidthContext';
 
 // Use same worker as pdfHelper
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
@@ -17,6 +18,7 @@ const ContentThumbnail = ({ item }) => {
   const [thumbnailUrl, setThumbnailUrl] = useState(item.thumbnail || null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const { isLowBandwidth } = useBandwidth();
 
   useEffect(() => {
     // If item has thumbnail already, use it
@@ -28,6 +30,13 @@ const ContentThumbnail = ({ item }) => {
 
     const isPdf = item.content_type === 'report' || item.content_type === 'publication' || 
                   (item.download_url && item.download_url.toLowerCase().endsWith('.pdf'));
+
+
+    // On slow connections, skip the PDF download — just show the icon fallback
+    if (isPdf && isLowBandwidth) {
+      setLoading(false);
+      return;
+    }
 
     if (isPdf && item.download_url) {
       let isMounted = true;
@@ -71,6 +80,7 @@ const ContentThumbnail = ({ item }) => {
     } else {
       setLoading(false);
     }
+
   }, [item, item.thumbnail, item.download_url, item.content_type]);
 
   const IconComponent = ICONS[item.content_type] || File;

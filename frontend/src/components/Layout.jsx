@@ -15,17 +15,26 @@ import {
   LogIn,
   CheckCircle2,
   Clock,
-  ChevronDown
+  ChevronDown,
+  Zap,
+  X
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+import { useBandwidth } from '../context/BandwidthContext';
 import dhruvLogo from '../assets/dhruv_logo.png';
+
+/* ── Connection-quality dot colours ──────────────────────────────── */
+const DOT_COLOR = { fast: '#22c55e', moderate: '#f59e0b', slow: '#ef4444', unknown: '#6b7280' };
+const DOT_LABEL = { fast: 'Good connection', moderate: 'Limited connection', slow: 'Slow connection', unknown: 'Connection unknown' };
 
 const Layout = () => {
   const { isLight, toggleTheme } = useTheme();
   const { user, logout, isAdmin, isResearcher, isApprovedResearcher, isPendingResearcher } = useAuth();
+  const { connectionType, isLowBandwidth, manualOverride, setManualOverride } = useBandwidth();
   const navigate = useNavigate();
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const notificationsRef = useRef(null);
   const [notifications, setNotifications] = useState([]);
@@ -127,8 +136,33 @@ const Layout = () => {
             ))}
           </nav>
 
-          {/* Right Action Icons: Theme Toggle, User Profile & Role Status */}
+          {/* Right Action Icons: Theme Toggle, Data Saver, User Profile & Role Status */}
           <div className="flex items-center gap-3">
+
+            {/* Connection quality dot — hidden when fast/unknown */}
+            {(connectionType === 'slow' || connectionType === 'moderate') && (
+              <span
+                title={DOT_LABEL[connectionType]}
+                className="w-2 h-2 rounded-full flex-shrink-0"
+                style={{ background: DOT_COLOR[connectionType], boxShadow: `0 0 6px ${DOT_COLOR[connectionType]}99` }}
+              />
+            )}
+
+            {/* Data Saver toggle */}
+            <button
+              id="data-saver-toggle"
+              onClick={() => setManualOverride(!manualOverride)}
+              title={manualOverride ? 'Data Saver ON — click to disable' : 'Enable Data Saver mode'}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-medium border transition-all duration-200 active:scale-95 ${
+                isLowBandwidth
+                  ? 'border-amber-500/50 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20'
+                  : 'border-ncpor-divider bg-ncpor-panel text-ncpor-muted hover:border-ncpor-accent/40 hover:text-ncpor-primary'
+              }`}
+            >
+              <Zap className="w-3 h-3" />
+              <span className="hidden sm:inline">{isLowBandwidth ? 'Data Saver' : 'Saver'}</span>
+            </button>
+
             {/* Theme Toggle (Midnight / Glacier Day) */}
             <button
               onClick={toggleTheme}
@@ -296,6 +330,28 @@ const Layout = () => {
           </div>
         </div>
       </header>
+
+      {/* ── Data Saver active banner ──────────────────────────────────── */}
+      {isLowBandwidth && !bannerDismissed && (
+        <div className="w-full bg-amber-500/10 border-b border-amber-500/25 px-4 py-2 flex items-center justify-between gap-3 text-xs text-amber-300">
+          <div className="flex items-center gap-2">
+            <Zap className="w-3.5 h-3.5 flex-shrink-0" />
+            <span>
+              <strong>Data Saver active</strong> — heavy media (3D, images, video) is deferred to reduce data usage.
+              {!manualOverride && connectionType !== 'unknown' && (
+                <span className="opacity-75"> Detected: {DOT_LABEL[connectionType].toLowerCase()}.</span>
+              )}
+            </span>
+          </div>
+          <button
+            onClick={() => setBannerDismissed(true)}
+            className="p-1 rounded hover:bg-amber-500/20 transition-colors flex-shrink-0"
+            aria-label="Dismiss banner"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
       {/* ── Main Page Content Outlet ─────────────────────────────────── */}
       <main className="flex-1 w-full relative z-10">

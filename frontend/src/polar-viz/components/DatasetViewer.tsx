@@ -1,8 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, lazy, LazyExoticComponent, Suspense } from 'react';
 import type { Dataset, ModeId, WorkerResponse } from '../types/dataset';
 import { evaluateCapabilities, MODE_LABELS } from '../engine/capabilityEngine';
-import VolumeField3D from './VolumeField3D';
 import { Box, Table, AlertTriangle, Layers, Database, Sparkles, RefreshCw, FileText } from 'lucide-react';
+import { useBandwidth } from '../../context/BandwidthContext';
+
+// VolumeField3D is only lazy-loaded when NOT in low-bandwidth mode.
+let _VolumeField3D: LazyExoticComponent<any> | null = null;
 
 interface Props {
   /** Pass a File (from an <input type="file"> or drag-and-drop)... */
@@ -29,6 +32,15 @@ export default function DatasetViewer({ file, url, height = 520, onClose }: Prop
   const [state, setState] = useState<State>({ status: 'idle' });
   const [mode, setMode] = useState<ModeId | null>(null);
   const [variable, setVariable] = useState<string>('');
+  const [force3D, setForce3D] = useState(false);
+  const { isLowBandwidth } = useBandwidth();
+
+  // Only assign the lazy import when actually needed
+  if (!isLowBandwidth || force3D) {
+    if (!_VolumeField3D) {
+      _VolumeField3D = React.lazy(() => import('./VolumeField3D'));
+    }
+  }
 
   useEffect(() => {
     if (!file && !url) { 
@@ -253,7 +265,49 @@ export default function DatasetViewer({ file, url, height = 520, onClose }: Prop
       {/* View Container */}
       <div className="p-4 bg-ncpor-bg/30">
         {mode === 'volume3D' ? (
-          <VolumeField3D dataset={dataset} variable={variable} height={height} />
+          isLowBandwidth && !force3D ? (
+            /* ── Data Saver 3D placeholder ─────────────────────────────── */
+            <div className="rounded-xl border border-ncpor-divider bg-[#060c18] p-8 text-center">
+              <Box className="w-8 h-8 text-ncpor-accent mx-auto mb-3 opacity-30" />
+              <p className="text-sm font-semibold text-ncpor-primary mb-1">3D View unavailable in Data Saver</p>
+              <p className="text-xs text-ncpor-muted mb-4 max-w-xs mx-auto">
+                Your connection is slow. The scientific data is still available in the Raw Data Matrix below.
+              </p>
+              {/* Lightweight dataset summary */}
+              <div className="mb-5 grid grid-cols-2 gap-3 text-left max-w-xs mx-auto">
+                <div className="bg-ncpor-panel rounded-lg p-3 border border-ncpor-divider">
+                  <p className="text-[10px] text-ncpor-muted uppercase font-mono mb-1">Rows</p>
+                  <p className="text-base font-bold text-ncpor-primary font-mono">{dataset.rowCount.toLocaleString()}</p>
+                </div>
+                <div className="bg-ncpor-panel rounded-lg p-3 border border-ncpor-divider">
+                  <p className="text-[10px] text-ncpor-muted uppercase font-mono mb-1">Variables</p>
+                  <p className="text-base font-bold text-ncpor-primary font-mono">{dataset.variables.length}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setForce3D(true)}
+                className="text-xs px-4 py-2 rounded-lg border border-ncpor-accent/40 text-ncpor-accent hover:bg-ncpor-accent/10 transition-colors"
+              >
+                Load 3D view anyway
+              </button>
+            </div>
+          ) : (
+            /* ── Normal 3D render ────────────────────────────────────── */
+            (() => {
+              const VolumeComp = _VolumeField3D;
+              if (!VolumeComp) return null;
+              return (
+                <Suspense fallback={
+                  <div className="h-96 flex flex-col items-center justify-center gap-2 bg-[#060c18] rounded-xl border border-ncpor-divider text-xs text-ncpor-muted">
+                    <div className="w-6 h-6 border-2 border-ncpor-accent border-t-transparent rounded-full animate-spin" />
+                    <span>Loading 3D visualization...</span>
+                  </div>
+                }>
+                  <VolumeComp dataset={dataset} variable={variable} height={height} />
+                </Suspense>
+              );
+            })()
+          )
         ) : (
           /* Raw Data Table View */
           <div className="rounded-xl border border-ncpor-divider bg-[#060c18] overflow-hidden">

@@ -3,9 +3,12 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import './config/firebase.js' // Initialize Firebase + Analytics on startup
 import App from './App.jsx'
+import { BandwidthProvider } from './context/BandwidthContext.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <App />
+    <BandwidthProvider>
+      <App />
+    </BandwidthProvider>
   </StrictMode>,
 )
