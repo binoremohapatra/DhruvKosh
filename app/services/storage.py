@@ -6,6 +6,8 @@ import cloudinary
 import cloudinary.uploader
 CLOUDINARY_URL = os.environ.get("CLOUDINARY_URL")
 if CLOUDINARY_URL:
+    CLOUDINARY_URL = CLOUDINARY_URL.strip()
+    os.environ["CLOUDINARY_URL"] = CLOUDINARY_URL
     cloudinary.config(
         secure=True
     )
