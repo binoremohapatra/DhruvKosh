@@ -16,19 +16,6 @@
   color-scheme: dark;
 }
 
-html.light, body.light, .light {
-  --bg: #F4F7FB;
-  --surface: #FFFFFF;
-  --surface-subtle: #E8EEF5;
-  --border: rgba(11, 27, 51, 0.10);
-  --border-hover: rgba(10, 124, 140, 0.40);
-  --accent: #0A7C8C;
-  --accent-glow: rgba(10, 124, 140, 0.20);
-  --secondary: #2F5FA8;
-  --text: #0B1B33;
-  --text-muted: #66758C;
-  color-scheme: light;
-}
 
 @layer base {
   body {
