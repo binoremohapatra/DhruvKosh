@@ -6,6 +6,7 @@ import PublishPanel from '../components/PublishPanel';
 import DatasetViewer from '../polar-viz/components/DatasetViewer';
 import BandwidthAwareImage from '../components/BandwidthAwareImage';
 import { useBandwidth } from '../context/BandwidthContext';
+import ResumableDownloadButton from '../components/ResumableDownloadButton';
 
 const ContentDetail = () => {
   const { id } = useParams();
@@ -179,14 +180,13 @@ const ContentDetail = () => {
             )}
             
             <div className="flex justify-end mt-4">
-              <a
-                href={fileUrl}
-                download
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-ncpor-accent/40 text-ncpor-accent text-sm font-semibold hover:bg-ncpor-accent hover:text-ncpor-bg transition-all"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                Download Document
-              </a>
+              <ResumableDownloadButton
+                downloadId={content.id}
+                url={fileUrl}
+                filename={content.file_path ? content.file_path.split('/').pop() : `${content.title}.pdf`}
+                mimeType="application/pdf"
+                label="Download Document"
+              />
             </div>
           </div>
         );
@@ -202,14 +202,13 @@ const ContentDetail = () => {
               placeholderLabel="High-resolution Image"
             />
             <div className="flex justify-end mt-4">
-              <a
-                href={fileUrl}
-                download
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-ncpor-accent/40 text-ncpor-accent text-sm font-semibold hover:bg-ncpor-accent hover:text-ncpor-bg transition-all"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                Download Photo
-              </a>
+              <ResumableDownloadButton
+                downloadId={content.id}
+                url={fileUrl}
+                filename={content.file_path ? content.file_path.split('/').pop() : `${content.title}.jpg`}
+                mimeType="image/jpeg"
+                label="Download Photo"
+              />
             </div>
           </div>
         );
@@ -247,14 +246,13 @@ const ContentDetail = () => {
             )}
             
             <div className="flex justify-end mt-4">
-              <a
-                href={fileUrl}
-                download
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-ncpor-accent/40 text-ncpor-accent text-sm font-semibold hover:bg-ncpor-accent hover:text-ncpor-bg transition-all"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                Download Video
-              </a>
+              <ResumableDownloadButton
+                downloadId={content.id}
+                url={fileUrl}
+                filename={content.file_path ? content.file_path.split('/').pop() : `${content.title}.mp4`}
+                mimeType="video/mp4"
+                label="Download Video"
+              />
             </div>
           </div>
         );
@@ -283,14 +281,13 @@ const ContentDetail = () => {
                     <p className="text-xs text-ncpor-secondary mt-0.5">CTD Profiles · Water Columns · Scalar Field Rendering</p>
                   </div>
                 </div>
-                <a
-                  href={fileUrl}
-                  download
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-ncpor-accent/40 text-ncpor-accent text-sm font-semibold hover:bg-ncpor-accent hover:text-ncpor-bg transition-all"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                  Download Dataset
-                </a>
+                <ResumableDownloadButton
+                  downloadId={content.id}
+                  url={fileUrl}
+                  filename={content.file_path ? content.file_path.split('/').pop() : `${content.title}`}
+                  mimeType="application/octet-stream"
+                  label="Download Dataset"
+                />
               </div>
             </div>
 
