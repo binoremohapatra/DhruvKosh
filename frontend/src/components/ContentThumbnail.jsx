@@ -1,10 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { FileText, FileBarChart, Image as ImageIcon, Film, File } from 'lucide-react';
-import * as pdfjsLib from 'pdfjs-dist';
-import { useBandwidth } from '../context/BandwidthContext';
-
-// Use same worker as pdfHelper
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
 
 const ICONS = {
   photo:       ImageIcon,
@@ -18,70 +13,18 @@ const ContentThumbnail = ({ item }) => {
   const [thumbnailUrl, setThumbnailUrl] = useState(item.thumbnail || null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const { isLowBandwidth } = useBandwidth();
 
   useEffect(() => {
-    // If item has thumbnail already, use it
+    // If item has a pre-stored thumbnail image, use it
     if (item.thumbnail) {
       setThumbnailUrl(item.thumbnail);
       setLoading(false);
       return;
     }
 
-    const isPdf = item.content_type === 'report' || item.content_type === 'publication' || 
-                  (item.download_url && item.download_url.toLowerCase().endsWith('.pdf'));
-
-
-    // On slow connections, skip the PDF download — just show the icon fallback
-    if (isPdf && isLowBandwidth) {
-      setLoading(false);
-      return;
-    }
-
-    if (isPdf && item.download_url) {
-      let isMounted = true;
-      setLoading(true);
-      setError(false);
-
-      const fetchPdfThumbnail = async () => {
-        try {
-          const loadingTask = pdfjsLib.getDocument({
-            url: item.download_url,
-            disableAutoFetch: true,
-            disableStream: true
-          });
-          const pdf = await loadingTask.promise;
-          const page = await pdf.getPage(1);
-          const viewport = page.getViewport({ scale: 0.8 });
-          const canvas = document.createElement("canvas");
-          canvas.width = viewport.width;
-          canvas.height = viewport.height;
-          const ctx = canvas.getContext("2d");
-          await page.render({ canvasContext: ctx, viewport }).promise;
-          
-          if (isMounted) {
-            setThumbnailUrl(canvas.toDataURL("image/jpeg", 0.9));
-            setLoading(false);
-          }
-        } catch (err) {
-          console.error("Failed to render PDF thumbnail:", err);
-          if (isMounted) {
-            setError(true);
-            setLoading(false);
-          }
-        }
-      };
-
-      fetchPdfThumbnail();
-
-      return () => {
-        isMounted = false;
-      };
-    } else {
-      setLoading(false);
-    }
-
-  }, [item, item.thumbnail, item.download_url, item.content_type]);
+    // For all other cases (PDF reports, publications, etc.) fall through to icon fallback
+    setLoading(false);
+  }, [item.thumbnail]);
 
   const IconComponent = ICONS[item.content_type] || File;
 
