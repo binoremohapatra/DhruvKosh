@@ -1,4 +1,4 @@
-from app.utils.storage import upload_to_cloud_if_configured
+from app.services.storage import upload_to_cloud_if_configured
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from typing import Optional
