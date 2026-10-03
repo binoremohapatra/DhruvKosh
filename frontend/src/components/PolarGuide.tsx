@@ -35,7 +35,7 @@ function getPolarFallback(message: string, mode: string) {
     return {
       reply: "Hello! I am Mavis, your 3D AI Polar Guide at NCPOR. Ask me anything about Antarctica, the Arctic, or India's polar research stations!",
       animation: "WAVE",
-      emotion: "FRIENDLY"
+      emotion: "HAPPY"
     };
   }
   if (q.includes('larsen') || q.includes('ice') || q.includes('thinning') || q.includes('melt')) {
@@ -58,7 +58,7 @@ function getPolarFallback(message: string, mode: string) {
     return {
       reply: "India operates two active research stations in Antarctica: Maitri and Bharati in the Larsemann Hills. In the Arctic, India operates Himadri station in Svalbard, Norway!",
       animation: "THANKFUL",
-      emotion: "FRIENDLY"
+      emotion: "HAPPY"
     };
   }
   if (q.includes('why') || q.includes('how') || q.includes('quiz') || q.includes('test') || q.includes('study')) {
@@ -73,12 +73,12 @@ function getPolarFallback(message: string, mode: string) {
       ? "That is a great polar science question! In Antarctica, scientists brave extreme -50°C cold to explore glaciers, sea ice, and celestial physics."
       : "NCPOR polar research expeditions collect glaciological, geological, and climate data to model global sea level changes and monsoonal teleconnections.",
     animation: "SPEAKING",
-    emotion: "FRIENDLY"
+    emotion: "HAPPY"
   };
 }
 
 export const PolarGuide: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
-  const { addChatMessage, mascot } = useAppStore();
+  const { addChatMessage, mascot, setMascotEmotion, setMascotAction } = useAppStore();
   const { startListening, stopListening, isListening } = useSpeech();
 
   // Menu and Mode state
@@ -91,6 +91,8 @@ export const PolarGuide: React.FC<{ onLogout: () => void }> = ({ onLogout }) => 
     addChatMessage('user', message, chatMode);
 
     // Immediate Thinking State
+    setMascotAction('THINKING' as any);
+    setMascotEmotion('THINKING' as any);
     (window as any).motionController?.play('THINKING');
     (window as any).motionController?.applyEmotion('THINKING');
 
@@ -133,7 +135,10 @@ export const PolarGuide: React.FC<{ onLogout: () => void }> = ({ onLogout }) => 
 
     // 🚀 High Fidelity Facial Emotion & Body Animation
     const anim = replyData.animation || replyData.action || 'SPEAKING';
-    const emotion = replyData.emotion || 'FRIENDLY';
+    const emotion = replyData.emotion || 'HAPPY';
+
+    setMascotAction(anim as any);
+    setMascotEmotion(emotion as any);
 
     (window as any).motionController?.applyEmotion(emotion);
     (window as any).motionController?.play(anim);
