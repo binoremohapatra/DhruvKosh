@@ -22,6 +22,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useBandwidth } from '../context/BandwidthContext';
 import dhruvLogo from '../assets/dhruv_logo.png';
+import DownloadManagerWidget from './DownloadManagerWidget';
 
 /* ── Connection-quality dot colours ──────────────────────────────── */
 const DOT_COLOR = { fast: '#22c55e', moderate: '#f59e0b', slow: '#ef4444', unknown: '#6b7280' };
@@ -403,6 +404,9 @@ const Layout = () => {
           </div>
         </div>
       </footer>
+
+      {/* ── Global Download Manager Tray ──────────────────────────── */}
+      <DownloadManagerWidget />
     </div>
   );
 };

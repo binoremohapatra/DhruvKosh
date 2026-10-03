@@ -2,6 +2,7 @@ import React, { Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './context/AuthContext';
+import { DownloadProvider } from './context/DownloadContext';
 import Layout from './components/Layout';
 import ErrorBoundary from './components/ErrorBoundary';
 import { SpeechProvider } from './contexts/SpeechProvider';
@@ -38,39 +39,41 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <AuthProvider>
-          <SpeechProvider>
-            <ErrorBoundary>
-              <Suspense fallback={<LoadingSpinner />}>
-                <Routes>
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/" element={<Layout />}>
-                    <Route index element={<Repository />} />
-                    <Route path="upload" element={<Upload />} />
-                    <Route path="dashboard" element={<Dashboard />} />
-                    <Route path="admin" element={<AdminDashboard />} />
-                    <Route path="publishing" element={<Publishing />} />
-                    <Route path="content/:id" element={<ContentDetail />} />
-                    <Route path="expeditions" element={<ExpeditionsList />} />
-                    <Route path="expeditions/:id" element={<ExpeditionDetail />} />
-                    <Route
-                      path="polar-guide"
-                      element={
-                        <div className="w-full" style={{ height: 'calc(100vh - 64px)' }}>
-                          <PolarGuide
-                            onLogout={() => {
-                              localStorage.removeItem('auth_token');
-                              localStorage.removeItem('user');
-                              window.location.href = '/login';
-                            }}
-                          />
-                        </div>
-                      }
-                    />
-                  </Route>
-                </Routes>
-              </Suspense>
-            </ErrorBoundary>
-          </SpeechProvider>
+          <DownloadProvider>
+            <SpeechProvider>
+              <ErrorBoundary>
+                <Suspense fallback={<LoadingSpinner />}>
+                  <Routes>
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/" element={<Layout />}>
+                      <Route index element={<Repository />} />
+                      <Route path="upload" element={<Upload />} />
+                      <Route path="dashboard" element={<Dashboard />} />
+                      <Route path="admin" element={<AdminDashboard />} />
+                      <Route path="publishing" element={<Publishing />} />
+                      <Route path="content/:id" element={<ContentDetail />} />
+                      <Route path="expeditions" element={<ExpeditionsList />} />
+                      <Route path="expeditions/:id" element={<ExpeditionDetail />} />
+                      <Route
+                        path="polar-guide"
+                        element={
+                          <div className="w-full" style={{ height: 'calc(100vh - 64px)' }}>
+                            <PolarGuide
+                              onLogout={() => {
+                                localStorage.removeItem('auth_token');
+                                localStorage.removeItem('user');
+                                window.location.href = '/login';
+                              }}
+                            />
+                          </div>
+                        }
+                      />
+                    </Route>
+                  </Routes>
+                </Suspense>
+              </ErrorBoundary>
+            </SpeechProvider>
+          </DownloadProvider>
         </AuthProvider>
       </BrowserRouter>
     </QueryClientProvider>
