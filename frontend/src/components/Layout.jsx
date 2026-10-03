@@ -35,9 +35,7 @@ const Layout = () => {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const notificationsRef = useRef(null);
-  const mobileMenuRef = useRef(null);
   const [notifications, setNotifications] = useState([]);
   const unreadCount = notifications.filter(n => !n.read).length;
 
@@ -46,18 +44,11 @@ const Layout = () => {
       if (notificationsRef.current && !notificationsRef.current.contains(event.target)) {
         setIsNotificationsOpen(false);
       }
-      if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target)) {
-        setIsMobileMenuOpen(false);
-      }
     };
     const handleEscape = (e) => {
-      if (e.key === 'Escape') {
-        setIsNotificationsOpen(false);
-        setIsMobileMenuOpen(false);
-      }
+      if (e.key === 'Escape') setIsNotificationsOpen(false);
     };
-    
-    if (isNotificationsOpen || isMobileMenuOpen) {
+    if (isNotificationsOpen) {
       document.addEventListener('mousedown', handleClickOutside);
       document.addEventListener('keydown', handleEscape);
     }
@@ -65,7 +56,7 @@ const Layout = () => {
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleEscape);
     };
-  }, [isNotificationsOpen, isMobileMenuOpen]);
+  }, [isNotificationsOpen]);
 
   const markAllAsRead = () => {
     setNotifications(notifications.map(n => ({ ...n, read: true })));
@@ -121,8 +112,8 @@ const Layout = () => {
             </div>
           </NavLink>
 
-          {/* Nav Links — visible from 1100px upward */}
-          <nav className="hidden [1100px]:flex xl:flex items-center gap-0.5 bg-ncpor-panel/80 p-1 rounded-xl border border-ncpor-divider overflow-hidden">
+          {/* Nav Links — always visible */}
+          <nav className="flex items-center gap-0.5 bg-ncpor-panel/80 p-1 rounded-xl border border-ncpor-divider overflow-hidden">
             {NAV.map(({ to, end, label, icon: Icon }) => (
               <NavLink
                 key={to}
@@ -317,41 +308,6 @@ const Layout = () => {
               </NavLink>
             )}
 
-            {/* Mobile Menu Toggle Button — visible below 1100px */}
-            <div className="relative [1100px]:hidden" ref={mobileMenuRef}>
-              <button
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="p-2 text-ncpor-muted hover:text-ncpor-accent hover:bg-ncpor-panel rounded-lg transition-colors border border-ncpor-divider flex items-center justify-center"
-                aria-label="Toggle navigation menu"
-              >
-                {isMobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
-              </button>
-
-              {/* Compact Navigation Dropdown */}
-              {isMobileMenuOpen && (
-                <div className="absolute right-0 mt-2 w-52 bg-ncpor-surface border border-ncpor-divider rounded-xl shadow-2xl p-2 z-50 animate-fade-in flex flex-col gap-1">
-                  {NAV.map(({ to, end, label, icon: Icon }) => (
-                    <NavLink
-                      key={to}
-                      to={to}
-                      end={end}
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className={({ isActive }) => `
-                        flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold tracking-wide transition-all duration-200
-                        ${
-                          isActive
-                            ? 'bg-ncpor-elevated text-ncpor-accent shadow-sm'
-                            : 'text-ncpor-secondary hover:text-ncpor-primary hover:bg-ncpor-elevated/50'
-                        }
-                      `}
-                    >
-                      <Icon className="w-4 h-4 flex-shrink-0" />
-                      <span>{label}</span>
-                    </NavLink>
-                  ))}
-                </div>
-              )}
-            </div>
 
           </div>
         </div>
