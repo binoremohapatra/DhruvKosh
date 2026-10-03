@@ -172,7 +172,7 @@ const ContentDetail = () => {
               </div>
             ) : (
               <iframe
-                src={fileUrl}
+                src={`https://docs.google.com/gview?url=${encodeURIComponent(fileUrl)}&embedded=true`}
                 className="w-full h-96 border border-ncpor-divider rounded-lg mb-4"
                 title="PDF Preview"
               />
