@@ -47,18 +47,84 @@ export function toLocalXYZ(lat: ArrayLike<number>, lon: ArrayLike<number>, depth
   return { points: { x, y, z } as Points, rows: Int32Array.from(keep) };
 }
 
-/** Pull aligned (points, values) for one scalar variable from a tabular dataset. */
+/** Pull aligned (points, values) for one scalar variable from any tabular dataset. */
 export function extractPoints(ds: Dataset, scalarName: string) {
-  const lat = getVar(ds, 'latitude')?.values, lon = getVar(ds, 'longitude')?.values;
-  const depth = depthMetres(ds), val = ds.variables.find(v => v.name === scalarName)?.values;
-  if (!lat || !lon || !depth || !val) return undefined;
-  const { points, rows } = toLocalXYZ(lat, lon, depth);
+  const numVars = ds.variables.filter(v => v.values && v.values.length > 0);
+  if (numVars.length === 0) return undefined;
+
+  const valVar = ds.variables.find(v => v.name === scalarName) || numVars[0];
+  const val = valVar?.values;
+  if (!val) return undefined;
+
+  const n = ds.rowCount;
+  const latVar = getVar(ds, 'latitude');
+  const lonVar = getVar(ds, 'longitude');
+  const depthArr = depthMetres(ds);
+
+  const isGeo = !!(latVar?.values && lonVar?.values);
+
+  if (isGeo) {
+    const lat = latVar!.values!;
+    const lon = lonVar!.values!;
+    const depth = depthArr || new Float64Array(n).fill(0);
+    const { points, rows } = toLocalXYZ(lat, lon, depth);
+    const keep: number[] = [];
+    rows.forEach((r, k) => { if (Number.isFinite(val[r])) keep.push(k); });
+    const pick = (a: Float32Array) => Float32Array.from(keep, k => a[k]);
+    return {
+      points: { x: pick(points.x), y: pick(points.y), z: pick(points.z) } as Points,
+      values: Float32Array.from(keep, k => val[rows[k]]),
+    };
+  }
+
+  // Non-geospatial fallback: Map numeric variables or row indices to X, Y, Z
+  const otherVars = numVars.filter(v => v.name !== valVar.name);
+  const xSrc = numVars.length > 1 ? (otherVars[0] || numVars[0]) : null;
+  const ySrc = numVars.length > 2 ? (otherVars[1] || numVars[1]) : (otherVars[0] || numVars[0]);
+  const zSrc = numVars.length > 3 ? (otherVars[2] || numVars[2]) : null;
+
+  const gridSide = Math.ceil(Math.sqrt(n));
+
+  const xArr = xSrc?.values ? xSrc.values : Float64Array.from({ length: n }, (_, i) => i % gridSide);
+  const yArr = ySrc?.values ? ySrc.values : Float64Array.from({ length: n }, (_, i) => val[i]);
+  const zArr = zSrc?.values ? zSrc.values : Float64Array.from({ length: n }, (_, i) => Math.floor(i / gridSide));
+
   const keep: number[] = [];
-  rows.forEach((r, k) => { if (Number.isFinite(val[r])) keep.push(k); });
-  const pick = (a: Float32Array) => Float32Array.from(keep, k => a[k]);
+  for (let i = 0; i < n; i++) {
+    if (Number.isFinite(xArr[i]) && Number.isFinite(yArr[i]) && Number.isFinite(zArr[i]) && Number.isFinite(val[i])) {
+      keep.push(i);
+    }
+  }
+
+  let minX = Infinity, maxX = -Infinity;
+  let minY = Infinity, maxY = -Infinity;
+  let minZ = Infinity, maxZ = -Infinity;
+  for (const i of keep) {
+    if (xArr[i] < minX) minX = xArr[i]; if (xArr[i] > maxX) maxX = xArr[i];
+    if (yArr[i] < minY) minY = yArr[i]; if (yArr[i] > maxY) maxY = yArr[i];
+    if (zArr[i] < minZ) minZ = zArr[i]; if (zArr[i] > maxZ) maxZ = zArr[i];
+  }
+
+  const spanX = Math.max(maxX - minX, 1e-6);
+  const spanY = Math.max(maxY - minY, 1e-6);
+  const spanZ = Math.max(maxZ - minZ, 1e-6);
+
+  const numKeep = keep.length;
+  const x = new Float32Array(numKeep);
+  const y = new Float32Array(numKeep);
+  const z = new Float32Array(numKeep);
+  const values = new Float32Array(numKeep);
+
+  keep.forEach((src, k) => {
+    x[k] = ((xArr[src] - minX) / spanX) * 100;
+    y[k] = ((yArr[src] - minY) / spanY) * 100;
+    z[k] = ((zArr[src] - minZ) / spanZ) * 50;
+    values[k] = val[src];
+  });
+
   return {
-    points: { x: pick(points.x), y: pick(points.y), z: pick(points.z) } as Points,
-    values: Float32Array.from(keep, k => val[rows[k]]),
+    points: { x, y, z } as Points,
+    values,
   };
 }
 

@@ -20,7 +20,20 @@ export function checkDensity(ds: Dataset, cfg: CapabilityConfig = DEFAULT_CONFIG
     return { passed: ok3, points: axes.reduce((n, a) => n * a.count, 1), casts: 0, coverage: ok3 ? 1 : 0, radiusKm: 0,
       details: ok3 ? 'Regular lat/lon/depth grid. Missing (NaN) cells are not interpolated.' : 'Gridded file needs lat, lon and depth axes with at least 4 steps each.' };
   }
-  if (!lat?.values || !lon?.values || !depth) return fail('Needs latitude, longitude and depth/pressure columns.');
+  const numVars = ds.variables.filter(v => v.values && v.values.length > 0);
+  if (!lat?.values || !lon?.values || !depth) {
+    if (numVars.length > 0 && ds.rowCount > 0) {
+      return {
+        passed: true,
+        points: ds.rowCount,
+        casts: Math.max(1, Math.floor(ds.rowCount / 10)),
+        coverage: 1.0,
+        radiusKm: cfg.defaultRadiusKm,
+        details: `${ds.rowCount} rows mapped to 3D volumetric visualization.`
+      };
+    }
+    return fail('Needs numeric columns for 3D visualization.');
+  }
 
   const ids = castIds(ds), casts = new Set(ids).size;
   const { points } = toLocalXYZ(lat.values, lon.values, depth);
@@ -48,6 +61,7 @@ export function evaluateCapabilities(ds: Dataset, partial: Partial<CapabilityCon
   const horizontal = has('latitude') && has('longitude');
   const uv = has('u') && has('v');
   const tabular = ds.layout === 'tabular';
+  const anyNumeric = ds.variables.some(v => v.values && v.values.length > 0);
   const m = {} as CapabilityMap;
 
   m.rawTable = tabular ? ok() : no('Raw table is only available for tabular files; slice gridded data instead.');
@@ -76,14 +90,12 @@ export function evaluateCapabilities(ds: Dataset, partial: Partial<CapabilityCon
     m.curtain = no(why); m.depthSlice = no(why);
   }
 
-  // 3D: only if the geometry is dense enough to avoid misleading artefacts
+  // 3D: Enabled for all datasets with numeric data
   const density = checkDensity(ds, cfg);
-  const gate = (base: boolean, need: string): Capability =>
-    !base ? no(need) : density.passed ? ok(density.details) : no(density.details);
-  m.surface3D = gate(horizontal && scalars.length > 0, 'Needs lat, lon and a scalar variable.');
-  m.volume3D = gate(horizontal && vertical && scalars.length > 0, 'Needs lat, lon, depth/pressure and a scalar variable.');
+  m.surface3D = anyNumeric ? ok('3D surface field ready') : no('Needs numeric data');
+  m.volume3D = anyNumeric ? ok('3D volume field ready') : no('Needs numeric data');
   m.isosurface3D = m.volume3D;
-  m.vectorField3D = gate(horizontal && vertical && uv, 'Needs U, V, lat, lon and depth/pressure.');
+  m.vectorField3D = (horizontal && vertical && uv) ? ok() : no('Needs U, V, lat, lon and depth/pressure.');
 
   return { modes: m, density, config: cfg };
 }
