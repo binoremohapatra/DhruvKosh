@@ -16,6 +16,23 @@ from app.services.publishers.registry import get_available_platforms
 
 app = FastAPI(title="NCPOR Polar Science Outreach Portal")
 
+from fastapi import Depends
+from sqlalchemy.orm import Session
+from app.database import get_db
+from app.models import ScientificDataset, Publication, ExpeditionReport, MediaItem
+
+@app.delete("/api/wipe-stale")
+def wipe_stale_data(db: Session = Depends(get_db)):
+    deleted = 0
+    for model in [ExpeditionReport, ScientificDataset, Publication, MediaItem]:
+        items = db.query(model).all()
+        for item in items:
+            if item.file_path and not str(item.file_path).startswith("http"):
+                db.delete(item)
+                deleted += 1
+    db.commit()
+    return {"message": f"Deleted {deleted} stale records"}
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request, exc):
     return JSONResponse(
