@@ -1003,4 +1003,19 @@ export const FULL_EMOTION_MAP: Record<string, FaceWeights> = {
     browDown: 0.00,
     browUp: 0.00,
   },
+
+  FRIENDLY: {
+    joy: 0.45,
+    relaxed: 0.20,
+    eyesNarrow: 0.05,
+    smileFull: 0.15,
+  },
+
+  SERIOUS: {
+    neutral: 0.60,
+    browDown: 0.35,
+    eyesNarrow: 0.15,
+    relaxed: -0.10,
+    joy: -0.20,
+  },
 };
