@@ -16,6 +16,7 @@ const PublishPanel = ({ post, onPublishSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [publishStatus, setPublishStatus] = useState([]); // from API
   const [localText, setLocalText] = useState(post.generated_text);
+  const [customImage, setCustomImage] = useState(null);
 
   useEffect(() => {
     setLocalText(post.generated_text);
@@ -54,9 +55,40 @@ const PublishPanel = ({ post, onPublishSuccess }) => {
 
     try {
       setLoading(true);
+      let finalMediaId = post.suggested_media_id;
+      
+      if (customImage) {
+        const formData = new FormData();
+        formData.append('file', customImage);
+        formData.append('title', 'Custom Social Media Image');
+        formData.append('media_type', 'photo');
+        
+        try {
+          const token = localStorage.getItem('token');
+          const uploadRes = await fetch(`${import.meta.env.VITE_API_URL || 'https://dhruvkosh.onrender.com'}/api/expeditions/standalone`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`
+            },
+            body: formData
+          });
+          
+          if (!uploadRes.ok) {
+            const errData = await uploadRes.json();
+            throw new Error(errData.detail || 'Image upload failed');
+          }
+          const mediaData = await uploadRes.json();
+          finalMediaId = mediaData.id;
+        } catch (err) {
+          alert('Failed to upload custom image: ' + err.message);
+          setLoading(false);
+          return;
+        }
+      }
+
       await publishAPI.publishContent(post.id, {
         platforms: selectedPlatforms,
-        media_id: post.suggested_media_id,
+        media_id: finalMediaId,
         scheduled_at: scheduleDate ? new Date(scheduleDate).toISOString() : null
       });
       queryClient.invalidateQueries({ queryKey: ['publishLog'] });
@@ -142,6 +174,23 @@ const PublishPanel = ({ post, onPublishSuccess }) => {
           <span className={`text-xs font-mono ${localText.length > 280 ? 'text-red-500 font-bold' : 'text-ncpor-secondary'}`}>
             X limit: {localText.length}/280
           </span>
+        </div>
+      )}
+
+      {selectedPlatforms.includes('instagram') && !post.suggested_media_id && (
+        <div className="mb-6 p-4 border border-ncpor-divider rounded-lg bg-ncpor-bg/30">
+          <label className="block text-sm font-semibold text-ncpor-primary mb-2">
+            Instagram requires an Image. Please upload one:
+          </label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={e => setCustomImage(e.target.files[0])}
+            className="text-sm text-ncpor-secondary file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-ncpor-accent/10 file:text-ncpor-accent hover:file:bg-ncpor-accent/20"
+          />
+          {!customImage && (
+            <p className="text-xs text-red-400 mt-2">Publishing to Instagram will fail without an image.</p>
+          )}
         </div>
       )}
 
