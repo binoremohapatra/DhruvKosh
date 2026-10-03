@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   Share2,
   Bell,
+  Bot,
   Sun,
   Moon,
   Shield,
@@ -61,7 +62,7 @@ const Layout = () => {
     { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { to: '/publishing', label: 'Publishing', icon: Share2 },
     { to: '/expeditions', label: 'Expeditions', icon: Database },
-    { to: '/polar-guide', label: 'AI Guide', icon: Bell },
+    { to: '/polar-guide', label: 'AI Guide', icon: Bot },
   ];
 
   if (isAdmin) {
@@ -112,15 +113,15 @@ const Layout = () => {
                 to={to}
                 end={end}
                 className={({ isActive }) => `
-                  flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-all duration-200
+                  flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-all duration-200 whitespace-nowrap
                   ${
                     isActive
-                      ? 'bg-ncpor-elevated text-ncpor-accent border border-ncpor-accent/25 shadow-sm'
+                      ? 'bg-ncpor-elevated text-ncpor-accent shadow-sm'
                       : 'text-ncpor-secondary hover:text-ncpor-primary hover:bg-ncpor-elevated/50'
                   }
                 `}
               >
-                <Icon className="w-3.5 h-3.5" />
+                <Icon className="w-3.5 h-3.5 flex-shrink-0" />
                 <span>{label}</span>
               </NavLink>
             ))}

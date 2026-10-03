@@ -1,66 +1,16 @@
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Bot, FileText, BarChart, Book, Image as ImageIcon, AlertCircle, RefreshCw, Send, Plus, Globe } from 'lucide-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { FileText, BarChart, Book, Image as ImageIcon, Plus } from 'lucide-react';
 import { API_BASE_URL } from '../config';
 import * as expeditionApi from '../api/expeditions';
-import * as genApi from '../api/generated';
-import Quiz from '../components/Quiz';
 import UploadModal from '../components/UploadModal';
 
-import { Volume2, VolumeX } from 'lucide-react';
 const ExpeditionDetail = () => {
   const { id } = useParams();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('reports');
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
-  const [contentLang, setContentLang] = useState('en');
-  const [isPlayingTTS, setIsPlayingTTS] = useState(false);
-  
-  // Chatbot State
-  const [chatMessage, setChatMessage] = useState('');
-  const [chatHistory, setChatHistory] = useState([
-    { role: 'ai', content: 'Hello! I am your AI Polar Guide. Ask me anything about this expedition.' }
-  ]);
-  const [isChatLoading, setIsChatLoading] = useState(false);
-
-  const handleChatSubmit = async (e) => {
-    e.preventDefault();
-    if (!chatMessage.trim()) return;
-    
-    const userMsg = chatMessage;
-    setChatHistory(prev => [...prev, { role: 'user', content: userMsg }]);
-    setChatMessage('');
-    setIsChatLoading(true);
-    
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/generated/expedition/${id}/chat`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: userMsg })
-        });
-        const data = await response.json();
-        setChatHistory(prev => [...prev, { role: 'ai', content: data.reply }]);
-    } catch (err) {
-        setChatHistory(prev => [...prev, { role: 'ai', content: "Sorry, I couldn't connect to the server." }]);
-    } finally {
-        setIsChatLoading(false);
-    }
-  };
-
-  // Web Speech API for TTS
-  const handleTTS = (text) => {
-    if (isPlayingTTS) {
-      window.speechSynthesis.cancel();
-      setIsPlayingTTS(false);
-    } else {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 0.9;
-      utterance.onend = () => setIsPlayingTTS(false);
-      window.speechSynthesis.speak(utterance);
-      setIsPlayingTTS(true);
-    }
-  };
   
   // Data Fetching via React Query
   const { data: expedition, isLoading: loadingExpedition, isError: expError } = useQuery({
@@ -68,53 +18,10 @@ const ExpeditionDetail = () => {
     queryFn: () => expeditionApi.getExpeditionFull(id)
   });
 
-  const { data: aiContentWrapper, isLoading: loadingAi } = useQuery({
-    queryKey: ['aiContent', id],
-    queryFn: () => genApi.getGeneratedContent(id)
-  });
-
-  const generateMutation = useMutation({
-    mutationFn: () => genApi.generateContent(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['aiContent', id]);
-    }
-  });
 
   if (loadingExpedition) return <div className="text-center p-20"><div className="animate-spin h-10 w-10 border-4 border-ncpor-accent border-t-transparent rounded-full mx-auto"></div></div>;
   if (expError || !expedition) return <div className="text-center p-20 text-ncpor-warning bg-ncpor-warning/10 border border-ncpor-warning/20 max-w-lg mx-auto rounded-xl mt-12">Expedition not found or failed to load.</div>;
 
-  const aiContent = aiContentWrapper ? aiContentWrapper[contentLang] : null;
-
-  const renderMediaAttachment = (mediaId) => {
-    if (!mediaId && expedition.media_items.length === 0) {
-       return <div className="mt-2 text-xs text-slate-400 italic flex items-center"><ImageIcon className="h-3 w-3 mr-1"/> No media available for this expedition.</div>;
-    }
-    
-    let media = expedition.media_items.find(m => m.id === mediaId);
-    if (!media && expedition.media_items.length > 0) {
-       media = expedition.media_items[0];
-    }
-    if (!media) return null;
-    
-    return (
-      <div className="mt-3 p-2 bg-white border border-slate-200 rounded flex items-center space-x-3">
-        <div className="h-10 w-10 bg-slate-100 rounded overflow-hidden flex items-center justify-center flex-shrink-0">
-           {media.media_type === 'photo' ? (
-             <img src={`${API_BASE_URL}/api/files/${media.file_path.replace('uploads/', '')}`} className="object-cover w-full h-full" alt={media.title} />
-           ) : (
-             <ImageIcon className="h-5 w-5 text-slate-400" />
-           )}
-        </div>
-        <div className="flex-grow min-w-0">
-          <p className="text-[10px] font-bold text-ocean-600 uppercase tracking-wider mb-0.5">📎 Suggested attachment</p>
-          <p className="text-xs font-medium text-slate-700 truncate">{media.title}</p>
-        </div>
-        <button className="text-xs text-slate-500 hover:text-ocean-600 font-medium px-2 py-1 bg-slate-50 hover:bg-ocean-50 rounded border border-slate-200 transition-colors">
-          Change
-        </button>
-      </div>
-    );
-  };
 
   return (
     <div className="font-sans">
@@ -133,9 +40,9 @@ const ExpeditionDetail = () => {
         </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-8">
+      <div className="flex flex-col gap-8">
         {/* Left Column: Data Tabs */}
-        <div className="lg:w-2/3 space-y-8">
+        <div className="w-full space-y-8">
           <div className="bg-ncpor-card rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.4)] border border-ncpor-border overflow-hidden">
             <div className="flex border-b border-ncpor-border bg-ncpor-bgSecondary overflow-x-auto justify-between">
               <div className="flex">
@@ -215,200 +122,6 @@ const ExpeditionDetail = () => {
           </div>
         </div>
 
-        {/* Right Column: AI Generation */}
-        <div className="lg:w-1/3">
-          <div className="bg-ncpor-card rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.4)] border border-ncpor-border overflow-hidden flex flex-col h-[700px]">
-            <div className="p-5 border-b border-ncpor-border bg-ncpor-bgSecondary flex-shrink-0">
-              <div className="flex justify-between items-start mb-2">
-                <div className="flex items-center space-x-3">
-                  <div className="bg-ncpor-accent/20 p-2 rounded-lg border border-ncpor-accent/30">
-                    <Bot className="h-5 w-5 text-ncpor-accent" />
-                  </div>
-                  <h2 className="text-lg font-bold text-ncpor-textPrimary font-display">AI Outreach Engine</h2>
-                </div>
-                
-                {aiContentWrapper && (
-                  <div className="flex bg-ncpor-bg p-1 rounded-md border border-ncpor-border">
-                    <button onClick={() => setContentLang('en')} className={`px-2 py-1 text-xs font-semibold rounded transition-colors ${contentLang === 'en' ? 'bg-ncpor-accent text-ncpor-bg' : 'text-ncpor-textSecondary hover:text-ncpor-textPrimary'}`}>EN</button>
-                    <button onClick={() => setContentLang('hi')} className={`px-2 py-1 text-xs font-semibold rounded transition-colors ${contentLang === 'hi' ? 'bg-ncpor-accent text-ncpor-bg' : 'text-ncpor-textSecondary hover:text-ncpor-textPrimary'}`}>हिन्दी</button>
-                  </div>
-                )}
-              </div>
-              <p className="text-ncpor-textMuted text-xs mt-1">Generate social posts and articles in English & Hindi automatically.</p>
-            </div>
-            
-            <div className="p-5 bg-ncpor-bg text-ncpor-textPrimary flex-grow overflow-y-auto custom-scrollbar relative">
-              {generateMutation.isPending ? (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-ncpor-bg/90 backdrop-blur-sm z-10">
-                  <div className="animate-spin h-10 w-10 border-4 border-ncpor-accent border-t-transparent rounded-full mb-4"></div>
-                  <p className="font-bold text-ncpor-textPrimary font-display">Generating Bilingual Content...</p>
-                  <p className="text-xs text-ncpor-textMuted mt-2 max-w-[200px] text-center">Writing articles and suggesting media attachments. This takes ~45 seconds.</p>
-                </div>
-              ) : null}
-              
-              {!aiContentWrapper && !loadingAi && !generateMutation.isPending ? (
-                <div className="text-center py-12">
-                  <Globe className="h-12 w-12 text-ncpor-textMuted/50 mx-auto mb-4" />
-                  <p className="text-ncpor-textMuted text-sm mb-6 max-w-[200px] mx-auto">No bilingual outreach content generated yet.</p>
-                  <button onClick={() => generateMutation.mutate()} className="w-full bg-ncpor-accent hover:bg-ncpor-accent/90 text-ncpor-bg py-3 rounded-lg text-sm font-semibold shadow-[0_0_15px_rgba(0,210,255,0.3)] transition-all flex items-center justify-center space-x-2">
-                    <Bot className="h-4 w-4" />
-                    <span>Generate AI Content</span>
-                  </button>
-                  {generateMutation.isError && <p className="text-ncpor-warning text-xs mt-3 flex items-center justify-center"><AlertCircle className="h-3 w-3 mr-1"/>Failed to generate</p>}
-                </div>
-              ) : aiContent ? (
-                <div className={`space-y-6 ${contentLang === 'hi' ? 'font-hind' : ''}`}>
-                  <div className="flex justify-between items-center bg-ncpor-card p-3 rounded-lg border border-ncpor-border shadow-sm sticky top-0 z-10">
-                    <h3 className="font-bold text-ncpor-textPrimary text-sm flex items-center font-display"><Globe className="h-4 w-4 mr-2 text-ncpor-accent"/> {contentLang === 'en' ? 'English Content' : 'हिन्दी सामग्री'}</h3>
-                    <button onClick={() => generateMutation.mutate()} className="text-[10px] uppercase font-bold tracking-wider flex items-center text-ncpor-accent hover:text-ncpor-lightIce bg-ncpor-accent/10 border border-ncpor-accent/20 px-2 py-1 rounded transition-colors">
-                      <RefreshCw className="h-3 w-3 mr-1" /> Regenerate
-                    </button>
-                  </div>
-
-                  {/* Social Posts */}
-                  <div className="space-y-3">
-                    <h4 className="font-bold text-ncpor-textSecondary text-xs uppercase tracking-wider border-b border-ncpor-border pb-2">Social Media</h4>
-                    
-                    {['twitter', 'instagram', 'linkedin'].map(platform => {
-                      const post = aiContent.social_posts?.[platform];
-                      if (!post) return null;
-                      
-                      const successLog = post.publish_logs?.find(log => log.status === 'success' || log.status === 'dry_run');
-                      
-                      return (
-                        <div key={platform} className="bg-ncpor-card border border-ncpor-border shadow-sm rounded-lg p-4 hover:border-ncpor-accent/40 transition-colors">
-                          <div className="flex justify-between items-center mb-3">
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-ncpor-textMuted">{platform}</span>
-                            {successLog ? (
-                               successLog.external_url && successLog.external_url !== 'PRIVATE_TELEGRAM' ? (
-                                 <a href={successLog.external_url} target="_blank" rel="noreferrer" className="text-[10px] uppercase tracking-wider text-emerald-400 font-bold flex items-center hover:underline">
-                                   Live ↗
-                                 </a>
-                               ) : (
-                                 <span className="text-[10px] uppercase tracking-wider text-emerald-400 font-bold flex items-center">
-                                   Published {successLog.status === 'dry_run' ? '(Dry Run)' : ''}
-                                 </span>
-                               )
-                            ) : (
-                              <a href="/publishing" className="text-[10px] uppercase tracking-wider text-ncpor-accent font-bold flex items-center hover:underline"><Send className="h-3 w-3 mr-1"/> Publish</a>
-                            )}
-                          </div>
-                          <p className="text-sm text-ncpor-textPrimary whitespace-pre-wrap leading-relaxed">{post.generated_text}</p>
-                          {renderMediaAttachment(post.suggested_media_id)}
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Website Article */}
-                  {aiContent.website_article && (
-                    <div className="space-y-3">
-                      <h4 className="font-bold text-ncpor-textSecondary text-xs uppercase tracking-wider border-b border-ncpor-border pb-2 mt-8">Website Article</h4>
-                      <div className="bg-ncpor-card border border-ncpor-border shadow-sm rounded-lg p-4 hover:border-ncpor-accent/40 transition-colors">
-                        <div className="flex justify-between items-start mb-3">
-                          <h5 className="font-bold text-ncpor-textPrimary font-display leading-tight text-lg">{aiContent.website_article.generated_title}</h5>
-                          {(() => {
-                            const successLog = aiContent.website_article.publish_logs?.find(log => log.status === 'success' || log.status === 'dry_run');
-                            if (!successLog) return null;
-                            return successLog.external_url && successLog.external_url !== 'PRIVATE_TELEGRAM' ? (
-                               <a href={successLog.external_url} target="_blank" rel="noreferrer" className="text-[10px] uppercase tracking-wider text-emerald-400 font-bold flex items-center hover:underline mt-1">
-                                 Live ↗
-                               </a>
-                            ) : (
-                               <span className="text-[10px] uppercase tracking-wider text-emerald-400 font-bold flex items-center mt-1">
-                                 Published {successLog.status === 'dry_run' ? '(Dry Run)' : ''}
-                               </span>
-                            );
-                          })()}
-                        </div>
-                        <p className="text-sm text-ncpor-textSecondary whitespace-pre-wrap leading-relaxed">{aiContent.website_article.generated_text}</p>
-                        {renderMediaAttachment(aiContent.website_article.suggested_media_id)}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Educational Explainer */}
-                  {aiContent.educational_explainer && (
-                    <div className="space-y-3">
-                      <h4 className="font-bold text-ncpor-textSecondary text-xs uppercase tracking-wider border-b border-ncpor-border pb-2 mt-8 flex justify-between items-center">
-                        <span>Educational Explainer</span>
-                        <button 
-                          onClick={() => handleTTS(aiContent.educational_explainer.generated_text)}
-                          className="flex items-center gap-1.5 bg-ncpor-accent/10 hover:bg-ncpor-accent/20 border border-ncpor-accent/20 text-ncpor-accent px-2.5 py-1 rounded transition-colors"
-                        >
-                          {isPlayingTTS ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
-                          <span className="text-[10px] uppercase font-bold tracking-wider">{isPlayingTTS ? 'Stop' : 'Listen'}</span>
-                        </button>
-                      </h4>
-                      <div className="bg-ncpor-card border border-ncpor-border shadow-sm rounded-lg p-4 hover:border-ncpor-accent/40 transition-colors">
-                        <h5 className="font-bold text-ncpor-textPrimary font-display mb-3 text-base">{aiContent.educational_explainer.generated_title}</h5>
-                        <p className="text-sm text-ncpor-textSecondary whitespace-pre-wrap leading-relaxed">{aiContent.educational_explainer.generated_text}</p>
-                        {renderMediaAttachment(aiContent.educational_explainer.suggested_media_id)}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Interactive Quiz Preview */}
-                  {aiContent.quiz && aiContent.quiz.length > 0 && (
-                    <div className="mt-8 border-t border-ncpor-border pt-6">
-                      <h4 className="font-bold text-ncpor-textSecondary text-xs uppercase tracking-wider mb-4">Quiz Preview</h4>
-                      <Quiz questions={aiContent.quiz} expeditionName={expedition.name} />
-                    </div>
-                  )}
-
-                  {/* Chat with Expedition RAG */}
-                  <div className="mt-8 border-t border-ncpor-border pt-6">
-                    <h4 className="font-bold text-ncpor-textSecondary text-xs uppercase tracking-wider mb-4 flex items-center gap-2">
-                      <Bot className="w-4 h-4 text-ncpor-accent" /> Chat with this Expedition
-                    </h4>
-                    <div className="bg-ncpor-card border border-ncpor-border shadow-sm rounded-lg flex flex-col h-96 overflow-hidden">
-                      <div className="flex-1 p-4 overflow-y-auto space-y-4 bg-ncpor-bgSecondary/30 custom-scrollbar">
-                        {chatHistory.map((msg, idx) => (
-                          <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm shadow-sm ${
-                              msg.role === 'user' 
-                                ? 'bg-ncpor-accent text-ncpor-bg rounded-br-sm font-medium' 
-                                : 'bg-ncpor-bgSecondary border border-ncpor-border text-ncpor-textPrimary rounded-bl-sm leading-relaxed'
-                            }`}>
-                              {msg.content}
-                            </div>
-                          </div>
-                        ))}
-                        {isChatLoading && (
-                          <div className="flex justify-start">
-                            <div className="bg-ncpor-bgSecondary border border-ncpor-border rounded-2xl rounded-bl-sm px-4 py-3 shadow-sm flex items-center gap-1.5">
-                              <div className="w-1.5 h-1.5 bg-ncpor-accent/60 rounded-full animate-bounce"></div>
-                              <div className="w-1.5 h-1.5 bg-ncpor-accent/60 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
-                              <div className="w-1.5 h-1.5 bg-ncpor-accent/60 rounded-full animate-bounce" style={{animationDelay: '0.4s'}}></div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                      <form onSubmit={handleChatSubmit} className="border-t border-ncpor-border p-3 bg-ncpor-card flex gap-2">
-                        <input
-                          type="text"
-                          value={chatMessage}
-                          onChange={(e) => setChatMessage(e.target.value)}
-                          placeholder="Ask a question..."
-                          className="flex-1 bg-ncpor-bgSecondary border border-ncpor-border focus:border-ncpor-accent focus:ring-1 focus:ring-ncpor-accent/30 rounded-lg px-4 py-2 text-sm text-ncpor-textPrimary placeholder-ncpor-textMuted outline-none transition-all"
-                          disabled={isChatLoading}
-                        />
-                        <button
-                          type="submit"
-                          disabled={isChatLoading || !chatMessage.trim()}
-                          className="bg-ncpor-accent text-ncpor-bg p-2 rounded-lg hover:bg-ncpor-accent/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
-                        >
-                          <Send className="w-4 h-4" />
-                        </button>
-                      </form>
-                    </div>
-                  </div>
-                </div>
-              ) : null}
-
-            </div>
-          </div>
-        </div>
       </div>
       
       {/* Dynamic Upload Modal */}
