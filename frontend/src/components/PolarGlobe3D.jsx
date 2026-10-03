@@ -4,10 +4,11 @@ import { OrbitControls, Html } from '@react-three/drei';
 import * as THREE from 'three';
 import * as topojson from 'topojson-client';
 import land110m from 'world-atlas/land-110m.json';
-import { useTheme } from '../context/ThemeContext';
 import { stations } from '../data/stations';
 
 const R = 1.0;
+
+const INDIAN_ACTIVE_IDS = new Set(['maitri', 'bharati', 'himadri']);
 
 function latLonToVector3(lat, lon, radius = R) {
   const phi = (90 - lat) * (Math.PI / 180);
@@ -118,7 +119,7 @@ const { landPoints, icePoints, coastlineVertices, graticuleVertices } = (() => {
   };
 })();
 
-const OceanSphere = ({ isLight }) => {
+const OceanSphere = () => {
   const shaderArgs = useMemo(() => ({
     uniforms: {
       colorCenter: { value: new THREE.Color() },
@@ -146,8 +147,8 @@ const OceanSphere = ({ isLight }) => {
   const matRef = useRef();
   useFrame(() => {
     if (matRef.current) {
-      matRef.current.uniforms.colorCenter.value.lerp(new THREE.Color(isLight ? '#EAF2F8' : '#0E2747'), 0.1);
-      matRef.current.uniforms.colorEdge.value.lerp(new THREE.Color(isLight ? '#D5E5F1' : '#050D1A'), 0.1);
+      matRef.current.uniforms.colorCenter.value.lerp(new THREE.Color('#0E2747'), 0.1);
+      matRef.current.uniforms.colorEdge.value.lerp(new THREE.Color('#050D1A'), 0.1);
     }
   });
 
@@ -159,7 +160,7 @@ const OceanSphere = ({ isLight }) => {
   );
 };
 
-const Atmosphere = ({ isLight }) => {
+const Atmosphere = () => {
   const shaderArgs = useMemo(() => ({
     uniforms: { glowColor: { value: new THREE.Color() } },
     vertexShader: `
@@ -187,7 +188,7 @@ const Atmosphere = ({ isLight }) => {
   const matRef = useRef();
   useFrame(() => {
     if (matRef.current) {
-      matRef.current.uniforms.glowColor.value.lerp(new THREE.Color(isLight ? '#000000' : '#7FE7F5'), 0.1);
+      matRef.current.uniforms.glowColor.value.lerp(new THREE.Color('#7FE7F5'), 0.1);
     }
   });
 
@@ -199,7 +200,7 @@ const Atmosphere = ({ isLight }) => {
   );
 };
 
-const LandDots = ({ isLight, vertices, lightColor, darkColor, lightOpacity, darkOpacity }) => {
+const LandDots = ({ vertices, darkColor, darkOpacity }) => {
   const geomRef = useRef();
   const matRef = useRef();
   useEffect(() => {
@@ -210,8 +211,8 @@ const LandDots = ({ isLight, vertices, lightColor, darkColor, lightOpacity, dark
   
   useFrame(() => {
     if (matRef.current) {
-      matRef.current.color.lerp(new THREE.Color(isLight ? lightColor : darkColor), 0.1);
-      matRef.current.opacity += ((isLight ? lightOpacity : darkOpacity) - matRef.current.opacity) * 0.1;
+      matRef.current.color.lerp(new THREE.Color(darkColor), 0.1);
+      matRef.current.opacity += (darkOpacity - matRef.current.opacity) * 0.1;
     }
   });
 
@@ -223,7 +224,7 @@ const LandDots = ({ isLight, vertices, lightColor, darkColor, lightOpacity, dark
   );
 };
 
-const Lines = ({ isLight, vertices, lightColor, darkColor, lightOpacity, darkOpacity }) => {
+const Lines = ({ vertices, darkColor, darkOpacity }) => {
   const geomRef = useRef();
   const matRef = useRef();
   useEffect(() => {
@@ -234,8 +235,8 @@ const Lines = ({ isLight, vertices, lightColor, darkColor, lightOpacity, darkOpa
   
   useFrame(() => {
     if (matRef.current) {
-      matRef.current.color.lerp(new THREE.Color(isLight ? lightColor : darkColor), 0.1);
-      matRef.current.opacity += ((isLight ? lightOpacity : darkOpacity) - matRef.current.opacity) * 0.1;
+      matRef.current.color.lerp(new THREE.Color(darkColor), 0.1);
+      matRef.current.opacity += (darkOpacity - matRef.current.opacity) * 0.1;
     }
   });
 
@@ -247,7 +248,7 @@ const Lines = ({ isLight, vertices, lightColor, darkColor, lightOpacity, darkOpa
   );
 };
 
-const StationMarker = ({ pos, station, isHovered, isDimmed, onHover, onLeave, isLight }) => {
+const StationMarker = ({ pos, station, isHovered, isDimmed, onHover, onLeave, onSelect }) => {
   const ref = useRef();
   const ringRef = useRef();
   const [isVisible, setIsVisible] = useState(true);
@@ -269,7 +270,7 @@ const StationMarker = ({ pos, station, isHovered, isDimmed, onHover, onLeave, is
            const phase = (t * 0.35 + Math.abs(pos.x * 2.0)) % 1.0;
            const s = 1.0 + phase * 1.5;
            ringRef.current.scale.set(s, s, s);
-           ringRef.current.material.opacity = (1.0 - phase) * 0.8;
+           ringRef.current.material.opacity = (1.0 - phase) * 0.85;
         } else if (station.status === 'planned') {
            const phase = (t * 0.15 + Math.abs(pos.x * 2.0)) % 1.0;
            const s = 1.0 + phase * 0.6;
@@ -286,112 +287,65 @@ const StationMarker = ({ pos, station, isHovered, isDimmed, onHover, onLeave, is
     ? '#F2B441' 
     : (station.status === 'planned' ? '#7FE7F5' : '#94A3B8');
 
-  // Compute offset classes to prevent word mixing / collisions
-  const labelPlacement = station.labelPlacement || 'bottom';
-  const getOffsetClass = () => {
-    switch (labelPlacement) {
-      case 'top-right':
-        return 'translate-x-3 -translate-y-6';
-      case 'top-left':
-        return '-translate-x-full -translate-y-6 -ml-2';
-      case 'bottom-right':
-        return 'translate-x-3 translate-y-3';
-      case 'bottom-left':
-        return '-translate-x-full translate-y-3 -ml-2';
-      case 'right':
-        return 'translate-x-3 -translate-y-1/2';
-      case 'left':
-        return '-translate-x-full -translate-y-1/2 -ml-3';
-      case 'top':
-        return '-translate-x-1/2 -translate-y-8';
-      case 'bottom':
-      default:
-        return '-translate-x-1/2 translate-y-3';
-    }
-  };
-  
+  const isIndianActive = INDIAN_ACTIVE_IDS.has(station.id);
+  const showLabel = isIndianActive && !isDimmed;
+
   return (
-    <group position={pos} ref={ref} onPointerOver={(e) => { e.stopPropagation(); onHover(); }} onPointerOut={onLeave}>
+    <group
+      position={pos}
+      ref={ref}
+      onPointerOver={(e) => {
+        e.stopPropagation();
+        onHover && onHover(station, { x: e.clientX, y: e.clientY });
+      }}
+      onPointerOut={() => {
+        onLeave && onLeave();
+      }}
+      onClick={(e) => {
+        e.stopPropagation();
+        onSelect && onSelect(station, { x: e.clientX, y: e.clientY });
+      }}
+    >
        {station.status !== 'decommissioned' ? (
          <mesh>
-           <sphereGeometry args={[0.016, 16, 16]} />
-           <meshBasicMaterial color={color} transparent opacity={isDimmed ? 0.25 : 0.95} />
+           <sphereGeometry args={[0.020, 16, 16]} />
+           <meshBasicMaterial color={color} transparent opacity={isDimmed ? 0.2 : (isHovered ? 1 : 0.95)} />
          </mesh>
        ) : (
          <mesh>
-           <ringGeometry args={[0.010, 0.016, 16]} />
-           <meshBasicMaterial color={color} transparent opacity={isDimmed ? 0.25 : 0.75} />
+           <ringGeometry args={[0.012, 0.020, 16]} />
+           <meshBasicMaterial color={color} transparent opacity={isDimmed ? 0.2 : 0.75} />
          </mesh>
        )}
        
        <mesh ref={ringRef}>
-         <ringGeometry args={[0.018, 0.024, 24]} />
+         <ringGeometry args={[0.022, 0.030, 24]} />
          <meshBasicMaterial color={color} transparent depthWrite={false} />
        </mesh>
        
-       {isHovered && isVisible && (
-          <Html center distanceFactor={1.5} zIndexRange={[200, 0]} className="pointer-events-none">
-             <div className={`p-4 rounded-xl border backdrop-blur-md shadow-2xl min-w-[260px] transition-all duration-200 ${
-                pos.x > 0 ? 'ml-[-280px]' : 'ml-[280px]'
-             } ${
-                isLight ? 'bg-white/95 border-slate-200 text-[#0B1B33]' : 'bg-[#0D1422]/95 border-white/15 text-[#EAF0F8]'
-             }`}>
-                <div className="flex justify-between items-start mb-2">
-                   <div>
-                     <h4 className="font-semibold text-sm font-display tracking-tight">{station.name}</h4>
-                     <p className="text-xs opacity-75">{station.place}</p>
-                   </div>
-                   <span className={`text-[9px] px-2 py-0.5 rounded font-mono font-medium border uppercase tracking-wider ${
-                      station.status === 'active' ? 'bg-[#F2B441]/15 text-[#F2B441] border-[#F2B441]/35' :
-                      station.status === 'planned' ? 'bg-[#7FE7F5]/15 text-[#7FE7F5] border-[#7FE7F5]/35' :
-                      'bg-slate-500/15 text-slate-400 border-slate-500/30'
-                   }`}>{station.status}</span>
-                </div>
-                
-                <p className="text-[11px] opacity-80 leading-relaxed mb-3">{station.description}</p>
-                
-                <div className="font-mono text-[10px] text-[#7FE7F5] bg-[#7FE7F5]/10 px-2 py-1 rounded border border-[#7FE7F5]/20 mb-3">
-                   {station.coordsFormatted || `${Math.abs(station.lat).toFixed(4)}°${station.lat < 0 ? 'S':'N'}, ${Math.abs(station.lon).toFixed(4)}°${station.lon < 0 ? 'W':'E'}`}
-                   {station.elevation && ` • Elev. ${station.elevation}`}
-                </div>
-
-                <div className="flex justify-between text-xs pt-2.5 border-t border-white/10">
-                   <div className="flex flex-col">
-                     <span className="opacity-50 text-[9px] uppercase font-mono">Established</span>
-                     <span className="font-semibold font-mono text-[11px]">{station.year}</span>
-                   </div>
-                   {station.datasetCount ? (
-                     <div className="flex flex-col text-right">
-                       <span className="opacity-50 text-[9px] uppercase font-mono">Archive Datasets</span>
-                       <span className="font-semibold font-mono text-[11px] text-[#F2B441]">{station.datasetCount}</span>
-                     </div>
-                   ) : null}
-                </div>
-             </div>
-          </Html>
-       )}
-       
-       {!isHovered && isVisible && (
+       {/* High-contrast, clean 12px pill label ONLY for Indian active stations */}
+       {showLabel && isVisible && (
          <Html 
            center={false} 
            distanceFactor={1.7}
-           className="pointer-events-auto cursor-pointer"
+           className="pointer-events-auto cursor-pointer select-none"
            style={{ 
-             opacity: isDimmed ? 0.25 : 0.95,
+             opacity: isDimmed ? 0.2 : 0.95,
              transition: 'opacity 0.2s ease, transform 0.2s ease'
            }}
          >
             <div 
-              onClick={(e) => { e.stopPropagation(); onHover(); }}
-              onMouseEnter={onHover}
-              className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md border shadow-lg backdrop-blur-md whitespace-nowrap text-[9.5px] font-mono tracking-wider uppercase transform transition-all duration-150 ${getOffsetClass()} ${
-                isLight 
-                  ? 'bg-white/95 border-slate-300 text-[#0B1B33] hover:border-[#0A7C8C] hover:scale-105' 
-                  : 'bg-[#05080F]/90 border-white/20 text-[#EAF0F8] hover:border-[#7FE7F5] hover:bg-[#0D1422] hover:scale-105'
-              }`}
+              onClick={(e) => {
+                e.stopPropagation();
+                onSelect && onSelect(station, { x: e.clientX, y: e.clientY });
+              }}
+              onMouseEnter={(e) => {
+                onHover && onHover(station, { x: e.clientX, y: e.clientY });
+              }}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-md border shadow-lg backdrop-blur-md whitespace-nowrap text-[12px] font-mono tracking-wider uppercase transform -translate-x-1/2 translate-y-3 bg-[#05080F]/90 border-white/25 text-[#EAF0F8] hover:border-[#7FE7F5] hover:bg-[#0D1422] hover:scale-105 transition-all duration-150"
             >
                <span 
-                 className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                 className="w-2 h-2 rounded-full flex-shrink-0"
                  style={{ backgroundColor: color }}
                />
                <span className="font-semibold">{station.name}</span>
@@ -439,38 +393,41 @@ const ParallaxGroup = ({ children }) => {
   return <group ref={groupRef}>{children}</group>;
 };
 
-export default function PolarGlobe3D({ polarView }) {
-  const { isLight } = useTheme();
-  const [activeStation, setActiveStation] = useState(null);
+export default function PolarGlobe3D({ polarView, activeStation, onHoverStation, onLeaveStation, onSelectStation }) {
+  const filteredStations = stations.filter(s =>
+    polarView === 'antarctic' ? s.region === 'Antarctica' || s.region === 'Southern Ocean' :
+    polarView === 'arctic'    ? s.region === 'Arctic' :
+                                s.region === 'Himalayas'
+  );
 
   return (
     <Canvas 
-      dpr={[1, 2]} 
+      dpr={[1, 1.5]} 
       camera={{ position: [0, -3.5, 3.5], fov: 35 }}
       style={{ width: '100%', height: '100%', pointerEvents: 'auto' }}
     >
       <ambientLight intensity={1} />
       
       <ParallaxGroup>
-        <OceanSphere isLight={isLight} />
-        <Atmosphere isLight={isLight} />
+        <OceanSphere />
+        <Atmosphere />
         
-        <LandDots isLight={isLight} vertices={landPoints} darkColor="#3C5F8F" lightColor="#2F5FA8" darkOpacity={0.7} lightOpacity={0.45} />
-        <LandDots isLight={isLight} vertices={icePoints} darkColor="#DDF3FF" lightColor="#2F5FA8" darkOpacity={0.25} lightOpacity={0.45} />
+        <LandDots vertices={landPoints} darkColor="#3C5F8F" darkOpacity={0.7} />
+        <LandDots vertices={icePoints} darkColor="#DDF3FF" darkOpacity={0.25} />
         
-        <Lines isLight={isLight} vertices={coastlineVertices} darkColor="#7FE7F5" lightColor="#0B1B33" darkOpacity={0.35} lightOpacity={0.30} />
-        <Lines isLight={isLight} vertices={graticuleVertices} darkColor="#FFFFFF" lightColor="#0B1B33" darkOpacity={0.08} lightOpacity={0.08} />
+        <Lines vertices={coastlineVertices} darkColor="#7FE7F5" darkOpacity={0.35} />
+        <Lines vertices={graticuleVertices} darkColor="#FFFFFF" darkOpacity={0.08} />
         
-        {stations.map(station => (
+        {filteredStations.map(station => (
           <StationMarker 
             key={station.id} 
             pos={latLonToVector3(station.lat, station.lon, R * 1.002)} 
             station={station} 
-            isLight={isLight}
-            isHovered={activeStation === station.id}
-            isDimmed={activeStation !== null && activeStation !== station.id}
-            onHover={() => setActiveStation(station.id)}
-            onLeave={() => setActiveStation(null)}
+            isHovered={activeStation?.id === station.id}
+            isDimmed={activeStation !== null && activeStation?.id !== station.id}
+            onHover={onHoverStation}
+            onLeave={onLeaveStation}
+            onSelect={onSelectStation}
           />
         ))}
       </ParallaxGroup>
@@ -481,7 +438,7 @@ export default function PolarGlobe3D({ polarView }) {
         enableZoom={false}
         minPolarAngle={Math.PI * 0.1}
         maxPolarAngle={Math.PI * 0.9}
-        autoRotate
+        autoRotate={!activeStation}
         autoRotateSpeed={0.4}
         enableDamping
         dampingFactor={0.05}

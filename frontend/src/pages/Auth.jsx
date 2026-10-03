@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useTheme } from '../context/ThemeContext';
 import { auth, googleProvider } from '../config/firebase';
 import { signInWithPopup } from 'firebase/auth';
 import dhruvLogo from '../assets/dhruv_logo.png';
@@ -12,7 +11,6 @@ const Auth = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { login, signup, googleSignIn } = useAuth();
-  const { isLight } = useTheme();
   
   const isSignupRoute = location.pathname === '/signup';
   const [isLogin, setIsLogin] = useState(!isSignupRoute);
@@ -181,7 +179,7 @@ const Auth = () => {
 
       {/* Auth Panel */}
       <div className="flex-1 flex items-center justify-center p-4 md:p-8 relative bg-ncpor-bg z-20 overflow-y-auto">
-        <div className={`w-full max-w-[440px] p-8 md:p-10 rounded-2xl transition-all duration-300 ${shake ? 'animate-shake' : ''} opacity-100 scale-100 animate-card-rise ${isLight ? 'bg-white shadow-[0_8px_30px_rgba(10,124,140,0.12)] border-gray-100' : 'bg-ncpor-surface border border-ncpor-divider/50 backdrop-blur-md shadow-2xl'}`}>
+        <div className={`w-full max-w-[440px] p-8 md:p-10 rounded-2xl transition-all duration-300 ${shake ? 'animate-shake' : ''} opacity-100 scale-100 animate-card-rise bg-ncpor-surface border border-ncpor-divider/50 backdrop-blur-md shadow-2xl`}>
           
           <div className="flex bg-ncpor-elevated rounded-lg p-1 mb-8 relative border border-ncpor-divider">
             <div className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-ncpor-bg rounded-md shadow-sm border border-ncpor-divider transition-all duration-300 ease-out ${isLogin ? 'left-1' : 'left-[calc(50%+3px)]'}`} />

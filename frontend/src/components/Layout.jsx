@@ -8,8 +8,6 @@ import {
   Share2,
   Bell,
   Bot,
-  Sun,
-  Moon,
   Shield,
   LogOut,
   LogIn,
@@ -17,9 +15,10 @@ import {
   Clock,
   ChevronDown,
   Zap,
-  X
+  X,
+  Menu
 } from 'lucide-react';
-import { useTheme } from '../context/ThemeContext';
+
 import { useAuth } from '../context/AuthContext';
 import { useBandwidth } from '../context/BandwidthContext';
 import dhruvLogo from '../assets/dhruv_logo.png';
@@ -30,14 +29,16 @@ const DOT_COLOR = { fast: '#22c55e', moderate: '#f59e0b', slow: '#ef4444', unkno
 const DOT_LABEL = { fast: 'Good connection', moderate: 'Limited connection', slow: 'Slow connection', unknown: 'Connection unknown' };
 
 const Layout = () => {
-  const { isLight, toggleTheme } = useTheme();
+
   const { user, logout, isAdmin, isResearcher, isApprovedResearcher, isPendingResearcher } = useAuth();
   const { connectionType, isLowBandwidth, manualOverride, setManualOverride } = useBandwidth();
   const navigate = useNavigate();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const notificationsRef = useRef(null);
+  const mobileMenuRef = useRef(null);
   const [notifications, setNotifications] = useState([]);
   const unreadCount = notifications.filter(n => !n.read).length;
 
@@ -46,12 +47,18 @@ const Layout = () => {
       if (notificationsRef.current && !notificationsRef.current.contains(event.target)) {
         setIsNotificationsOpen(false);
       }
+      if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target)) {
+        setIsMobileMenuOpen(false);
+      }
     };
     const handleEscape = (e) => {
-      if (e.key === 'Escape') setIsNotificationsOpen(false);
+      if (e.key === 'Escape') {
+        setIsNotificationsOpen(false);
+        setIsMobileMenuOpen(false);
+      }
     };
     
-    if (isNotificationsOpen) {
+    if (isNotificationsOpen || isMobileMenuOpen) {
       document.addEventListener('mousedown', handleClickOutside);
       document.addEventListener('keydown', handleEscape);
     }
@@ -59,7 +66,7 @@ const Layout = () => {
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleEscape);
     };
-  }, [isNotificationsOpen]);
+  }, [isNotificationsOpen, isMobileMenuOpen]);
 
   const markAllAsRead = () => {
     setNotifications(notifications.map(n => ({ ...n, read: true })));
@@ -92,7 +99,7 @@ const Layout = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           
           {/* Logo & Portal Identity */}
-          <NavLink to="/" className="flex items-center gap-3 group">
+          <NavLink to="/" className="flex items-center gap-3 group flex-shrink-0">
             <div className="w-10 h-10 rounded-xl flex-shrink-0 overflow-hidden transition-all duration-300 group-hover:shadow-[0_0_18px_rgba(0,210,255,0.45)] group-hover:scale-105">
               <img
                 src={dhruvLogo}
@@ -109,21 +116,21 @@ const Layout = () => {
                   NCPOR
                 </span>
               </div>
-              <span className="text-[10px] text-ncpor-muted uppercase tracking-widest -mt-0.5">
+              <span className="hidden xl:block text-[11px] text-ncpor-muted uppercase tracking-[0.08em] -mt-0.5 whitespace-nowrap">
                 National Polar &amp; Ocean Research
               </span>
             </div>
           </NavLink>
 
-          {/* Nav Links */}
-          <nav className="hidden md:flex items-center gap-1 bg-ncpor-panel/80 p-1 rounded-xl border border-ncpor-divider">
+          {/* Nav Links — visible from 1100px upward */}
+          <nav className="hidden [1100px]:flex xl:flex items-center gap-0.5 bg-ncpor-panel/80 p-1 rounded-xl border border-ncpor-divider overflow-hidden">
             {NAV.map(({ to, end, label, icon: Icon }) => (
               <NavLink
                 key={to}
                 to={to}
                 end={end}
                 className={({ isActive }) => `
-                  flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-all duration-200 whitespace-nowrap
+                  flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold tracking-wide transition-all duration-200 whitespace-nowrap
                   ${
                     isActive
                       ? 'bg-ncpor-elevated text-ncpor-accent shadow-sm'
@@ -137,8 +144,8 @@ const Layout = () => {
             ))}
           </nav>
 
-          {/* Right Action Icons: Theme Toggle, Data Saver, User Profile & Role Status */}
-          <div className="flex items-center gap-3">
+          {/* Right Action Row: Data Saver, Bell, Profile, Mobile Menu Toggle — aligned in one row */}
+          <div className="flex items-center gap-2">
 
             {/* Connection quality dot — hidden when fast/unknown */}
             {(connectionType === 'slow' || connectionType === 'moderate') && (
@@ -164,24 +171,6 @@ const Layout = () => {
               <span className="hidden sm:inline">{isLowBandwidth ? 'Data Saver' : 'Saver'}</span>
             </button>
 
-            {/* Theme Toggle (Midnight / Glacier Day) */}
-            <button
-              onClick={toggleTheme}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border border-ncpor-divider bg-ncpor-panel hover:border-ncpor-accent/40 text-ncpor-secondary hover:text-ncpor-primary transition-all duration-200 active:scale-95 shadow-sm"
-              title={`Switch to ${isLight ? 'Midnight (Dark)' : 'Glacier Day (Light)'}`}
-            >
-              {isLight ? (
-                <>
-                  <Moon className="w-3.5 h-3.5 text-[#0A7C8C]" />
-                  <span className="hidden sm:inline">Glacier Day</span>
-                </>
-              ) : (
-                <>
-                  <Sun className="w-3.5 h-3.5 text-[#7FE7F5]" />
-                  <span className="hidden sm:inline">Midnight</span>
-                </>
-              )}
-            </button>
 
             {/* Notification Bell */}
             <div className="relative" ref={notificationsRef}>
@@ -328,6 +317,43 @@ const Layout = () => {
                 <span>Login / Register</span>
               </NavLink>
             )}
+
+            {/* Mobile Menu Toggle Button — visible below 1100px */}
+            <div className="relative [1100px]:hidden" ref={mobileMenuRef}>
+              <button
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="p-2 text-ncpor-muted hover:text-ncpor-accent hover:bg-ncpor-panel rounded-lg transition-colors border border-ncpor-divider flex items-center justify-center"
+                aria-label="Toggle navigation menu"
+              >
+                {isMobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+              </button>
+
+              {/* Compact Navigation Dropdown */}
+              {isMobileMenuOpen && (
+                <div className="absolute right-0 mt-2 w-52 bg-ncpor-surface border border-ncpor-divider rounded-xl shadow-2xl p-2 z-50 animate-fade-in flex flex-col gap-1">
+                  {NAV.map(({ to, end, label, icon: Icon }) => (
+                    <NavLink
+                      key={to}
+                      to={to}
+                      end={end}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className={({ isActive }) => `
+                        flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold tracking-wide transition-all duration-200
+                        ${
+                          isActive
+                            ? 'bg-ncpor-elevated text-ncpor-accent shadow-sm'
+                            : 'text-ncpor-secondary hover:text-ncpor-primary hover:bg-ncpor-elevated/50'
+                        }
+                      `}
+                    >
+                      <Icon className="w-4 h-4 flex-shrink-0" />
+                      <span>{label}</span>
+                    </NavLink>
+                  ))}
+                </div>
+              )}
+            </div>
+
           </div>
         </div>
       </header>

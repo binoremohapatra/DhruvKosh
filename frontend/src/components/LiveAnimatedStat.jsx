@@ -26,7 +26,6 @@ const LiveAnimatedStat = memo(({
   sourceLabel,     // string — tooltip / aria-label for source info
   duration = 750,  // ms — animation duration (600–900 recommended)
   delay = 0,       // ms — initial animation delay
-  isLight = false, // bool — for colour theme
   className = '',
 }) => {
   const [display, setDisplay] = useState(0);
@@ -97,14 +96,11 @@ const LiveAnimatedStat = memo(({
     if (timerRef.current) clearTimeout(timerRef.current);
   }, []);
 
-  const textColor  = isLight ? 'text-slate-900' : 'text-white';
-  const mutedColor = isLight ? 'text-slate-500' : 'text-slate-400';
-
   return (
     <div className={`flex flex-col ${className}`} title={sourceLabel} aria-label={sourceLabel}>
       {/* Value row */}
       <div className="relative inline-flex items-baseline gap-1.5">
-        <span className={`text-xl font-bold tabular-nums leading-none ${textColor}`}>
+        <span className="text-xl font-bold tabular-nums leading-none text-white">
           {value == null ? (
             /* skeleton while loading */
             <span className="inline-block w-10 h-5 rounded bg-white/10 animate-pulse align-middle" />
@@ -126,7 +122,7 @@ const LiveAnimatedStat = memo(({
       </div>
 
       {/* Label */}
-      <span className={`text-[11px] mt-1 ${mutedColor}`}>{label}</span>
+      <span className="text-[11px] mt-1 text-[#8592A6]">{label}</span>
     </div>
   );
 });
