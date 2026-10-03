@@ -21,7 +21,7 @@ def upload_to_cloud_if_configured(local_path: str, folder: str, unique_filename:
     try:
         file_extension = os.path.splitext(unique_filename)[1].lower()
         resource_type = "auto"
-        if file_extension in [".pdf", ".csv", ".nc", ".xlsx"]:
+        if file_extension in [".csv", ".nc", ".xlsx"]:
             resource_type = "raw"
             
         print(f"Uploading {local_path} to Cloudinary...")
